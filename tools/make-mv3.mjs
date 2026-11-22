@@ -145,6 +145,7 @@ export function buildMv3Packages(rootDir = path.resolve(path.dirname(fileURLToPa
   const manifestPath = path.join(srcDir, 'manifest.json');
   const unpackedDir = path.join(rootDir, 'dist', 'build', 'ChalaCookiesEdit.chromium');
   const packagesDir = path.join(rootDir, 'store', 'paquetes');
+  const buildDir = path.join(rootDir, 'dist', 'build');
 
   const version = fs.readFileSync(versionPath, 'utf8').trim();
   if (!/^\d+\.\d+\.\d+$/.test(version)) {
@@ -177,11 +178,15 @@ export function buildMv3Packages(rootDir = path.resolve(path.dirname(fileURLToPa
   const zipBuffer = createZipBuffer(zipEntries);
 
   fs.mkdirSync(packagesDir, { recursive: true });
+  fs.mkdirSync(buildDir, { recursive: true });
   const chromiumZip = path.join(packagesDir, `ChalaCookiesEdit_${version}.chromium.zip`);
   const edgeZip = path.join(packagesDir, `ChalaCookiesEdit_${version}.edge.zip`);
+  const buildChromiumZip = path.join(buildDir, `ChalaCookiesEdit_${version}.chromium.zip`);
+  const buildEdgeZip = path.join(buildDir, `ChalaCookiesEdit_${version}.edge.zip`);
 
-  fs.writeFileSync(chromiumZip, zipBuffer);
-  fs.writeFileSync(edgeZip, zipBuffer);
+  for (const outPath of [chromiumZip, edgeZip, buildChromiumZip, buildEdgeZip]) {
+    fs.writeFileSync(outPath, zipBuffer);
+  }
 
   return {
     version,
