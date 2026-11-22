@@ -1,0 +1,19 @@
+{
+  "name": "chala-cookies-edit",
+  "version": "1.0.0",
+  "description": "Editor, inspector JWT y gestor local de cookies para Chromium y Microsoft Edge (Manifest V3) — Suite Chala.",
+  "type": "module",
+  "private": true,
+  "author": "Joel Rafael Chala García / Coposys",
+  "license": "MIT",
+  "homepage": "https://chaladev.site",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "icons": "node tools/generate-icons.mjs",
+    "test": "node tests/verify.mjs",
+    "build": "node tools/make-mv3.mjs",
+    "clean": "node -e \"import('node:fs').then(fs => { fs.rmSync('dist/build', { recursive: true, force: true }); fs.rmSync('store/paquetes', { recursive: true, force: true }); })\""
+  }
+}

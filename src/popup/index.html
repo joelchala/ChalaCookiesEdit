@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChalaCookiesEdit</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Encabezado principal -->
+      <header class="app-header">
+        <div class="brand-row">
+          <div class="brand-id">
+            <span class="brand-logo" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 5L55 14V31C55 45.2 45.1 55.6 32 60C18.9 55.6 9 45.2 9 31V14L32 5Z" fill="#0F172A" stroke="#10B981" stroke-width="4"/>
+                <circle cx="32" cy="32" r="12" fill="#1E293B" stroke="#06B6D4" stroke-width="3"/>
+                <circle cx="28" cy="29" r="2.2" fill="#10B981"/>
+                <circle cx="36" cy="28" r="1.8" fill="#06B6D4"/>
+                <circle cx="33" cy="36" r="2.4" fill="#10B981"/>
+              </svg>
+            </span>
+            <div class="brand-text">
+              <h1 class="app-title">ChalaCookiesEdit</h1>
+              <span class="domain-pill" id="domain-pill" title="Dominio activo">—</span>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button
+              type="button"
+              id="btn-new-cookie"
+              class="icon-btn icon-btn-primary"
+              data-i18n-title="btnNewCookie"
+              title="Nueva cookie"
+            >
+              <span aria-hidden="true">+</span>
+              <span class="btn-label" data-i18n="btnNewCookie">Nueva</span>
+            </button>
+            <button
+              type="button"
+              id="btn-io"
+              class="icon-btn"
+              data-i18n-title="btnImportExport"
+              title="Importar / Exportar"
+            >
+              <span aria-hidden="true">⇅</span>
+            </button>
+            <button
+              type="button"
+              id="btn-reload-tab"
+              class="icon-btn"
+              data-i18n-title="btnReloadTab"
+              title="Recargar pestaña"
+            >
+              <span aria-hidden="true">↻</span>
+            </button>
+            <button
+              type="button"
+              id="btn-delete-all"
+              class="icon-btn icon-btn-danger"
+              data-i18n-title="btnDeleteAll"
+              title="Borrar todas"
+            >
+              <span aria-hidden="true">🗑</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Aviso para URLs restringidas -->
+      <section id="restricted-view" class="restricted-view hidden" role="status">
+        <div class="restricted-card">
+          <div class="restricted-icon" aria-hidden="true">🛡</div>
+          <h2 id="restricted-title" data-i18n="restrictedTitle">
+            Página interna o protegida del navegador
+          </h2>
+          <p id="restricted-desc" data-i18n="restrictedDesc">
+            Por seguridad de Chromium/Edge, no es posible leer ni modificar cookies en URLs como chrome://, edge://, about: o páginas de extensiones.
+          </p>
+          <code id="restricted-url" class="restricted-url">chrome://</code>
+        </div>
+      </section>
+
+      <!-- Vista principal de cookies -->
+      <main id="main-view" class="main-view">
+        <div class="controls-bar">
+          <div class="search-wrap">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input
+              type="search"
+              id="search-input"
+              class="search-input"
+              autocomplete="off"
+              spellcheck="false"
+              data-i18n-placeholder="searchPlaceholder"
+              placeholder="Buscar por nombre o valor..."
+            />
+            <button
+              type="button"
+              id="btn-clear-search"
+              class="search-clear hidden"
+              aria-label="Limpiar búsqueda"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="filter-row" role="tablist" aria-label="Filtros de cookies">
+            <button type="button" class="filter-chip active" data-filter="all">
+              <span data-i18n="filterAll">Todas</span>
+              <span class="chip-count" id="count-all">0</span>
+            </button>
+            <button type="button" class="filter-chip" data-filter="httpOnly">
+              <span data-i18n="filterHttpOnly">HttpOnly</span>
+              <span class="chip-count" id="count-httponly">0</span>
+            </button>
+            <button type="button" class="filter-chip" data-filter="secure">
+              <span data-i18n="filterSecure">Secure</span>
+              <span class="chip-count" id="count-secure">0</span>
+            </button>
+            <button type="button" class="filter-chip" data-filter="session">
+              <span data-i18n="filterSession">Sesión</span>
+              <span class="chip-count" id="count-session">0</span>
+            </button>
+            <button type="button" class="filter-chip filter-chip-blocked" data-filter="blocked">
+              <span data-i18n="filterBlocked">Bloqueadas</span>
+              <span class="chip-count" id="count-blocked">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="cookie-list" class="cookie-list" role="list"></div>
+
+        <div id="empty-state" class="empty-state hidden">
+          <p class="empty-title" data-i18n="emptyTitle">Sin cookies que coincidan</p>
+          <p class="empty-desc" id="empty-desc" data-i18n="emptyDesc">
+            Este dominio no tiene cookies visibles o el filtro actual no devuelve resultados.
+          </p>
+        </div>
+      </main>
+
+      <!-- Footer discreto Suite Chala -->
+      <footer class="app-footer">
+        <div class="footer-links">
+          <a id="link-suite" href="https://chaladev.site" target="_blank" rel="noopener noreferrer">
+            Suite Chala
+          </a>
+          <span class="sep">·</span>
+          <a id="link-coposys" href="https://coposys.com.do" target="_blank" rel="noopener noreferrer">
+            Coposys
+          </a>
+        </div>
+        <a
+          id="link-paypal"
+          class="paypal-btn"
+          href="https://www.paypal.com/paypalme/coposys"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span aria-hidden="true">♥</span>
+          <span data-i18n="footerSupport">Apoyar (PayPal)</span>
+        </a>
+      </footer>
+    </div>
+
+    <!-- Modal: Crear / Editar / Duplicar cookie -->
+    <div id="modal-editor" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="editor-title">Nueva cookie</h2>
+          <button type="button" class="modal-close" data-close-modal="modal-editor" aria-label="Cerrar">✕</button>
+        </div>
+
+        <form id="cookie-form" class="modal-body">
+          <div class="form-row-2">
+            <div class="field">
+              <label for="field-name" data-i18n="labelName">Nombre</label>
+              <input type="text" id="field-name" name="name" required autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label for="field-path" data-i18n="labelPath">Ruta (Path)</label>
+              <input type="text" id="field-path" name="path" value="/" autocomplete="off" spellcheck="false" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="field-value" data-i18n="labelValue">Valor</label>
+            <textarea id="field-value" name="value" rows="3" spellcheck="false"></textarea>
+          </div>
+
+          <!-- Bloque colapsable automático para JWT detectado en editor -->
+          <details id="editor-jwt-details" class="jwt-panel hidden">
+            <summary class="jwt-summary">
+              <span class="jwt-summary-left">
+                <span class="badge badge-jwt">JWT</span>
+                <span data-i18n="jwtInspectorTitle">Inspector JWT (100% local)</span>
+              </span>
+              <span id="editor-jwt-status" class="jwt-status-pill"></span>
+            </summary>
+            <div class="jwt-content">
+              <div id="editor-jwt-meta" class="jwt-meta"></div>
+              <div class="jwt-block">
+                <span class="jwt-block-label" data-i18n="jwtPayload">Payload</span>
+                <pre id="editor-jwt-payload" class="jwt-pre"></pre>
+              </div>
+              <div class="jwt-block">
+                <span class="jwt-block-label" data-i18n="jwtHeader">Header</span>
+                <pre id="editor-jwt-header" class="jwt-pre"></pre>
+              </div>
+            </div>
+          </details>
+
+          <div class="form-row-2">
+            <div class="field">
+              <label for="field-domain" data-i18n="labelDomain">Dominio</label>
+              <input type="text" id="field-domain" name="domain" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label for="field-samesite" data-i18n="labelSameSite">SameSite</label>
+              <select id="field-samesite" name="sameSite">
+                <option value="unspecified">unspecified</option>
+                <option value="lax">lax</option>
+                <option value="strict">strict</option>
+                <option value="no_restriction">no_restriction (None)</option>
+              </select>
+            </div>
+          </div>
+          <p class="field-hint" data-i18n="domainHint">
+            Vacío o host exacto = host-only. Inicia con punto (.ejemplo.com) para compartir con subdominios.
+          </p>
+
+          <div class="field">
+            <label for="field-expiration" data-i18n="labelExpiration">Expiración</label>
+            <input type="datetime-local" id="field-expiration" name="expiration" />
+          </div>
+
+          <div class="checkbox-grid">
+            <label class="checkbox-item">
+              <input type="checkbox" id="field-session" name="session" />
+              <span data-i18n="labelSessionCookie">Cookie de sesión</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="field-httponly" name="httpOnly" />
+              <span data-i18n="labelHttpOnly">HttpOnly</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="field-secure" name="secure" />
+              <span data-i18n="labelSecure">Secure (solo HTTPS)</span>
+            </label>
+          </div>
+
+          <p id="samesite-notice" class="samesite-notice hidden" data-i18n="sameSiteSecureNotice">
+            SameSite=None requiere Secure=true automáticamente en Chromium.
+          </p>
+          <p id="editor-error" class="form-error hidden"></p>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal="modal-editor" data-i18n="btnCancel">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" data-i18n="btnSave">
+              Guardar cookie
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Importar / Exportar -->
+    <div id="modal-io" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="io-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="io-title" data-i18n="modalIoTitle">Importar / Exportar cookies</h2>
+          <button type="button" class="modal-close" data-close-modal="modal-io" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="modal-tabs">
+          <button type="button" class="modal-tab active" data-io-tab="export" data-i18n="tabExport">Exportar</button>
+          <button type="button" class="modal-tab" data-io-tab="import" data-i18n="tabImport">Importar</button>
+        </div>
+
+        <div id="io-panel-export" class="modal-body">
+          <div class="io-actions-grid">
+            <button type="button" id="btn-copy-json" class="btn btn-primary" data-i18n="btnCopyJson">
+              Copiar JSON
+            </button>
+            <button type="button" id="btn-download-json" class="btn btn-secondary" data-i18n="btnDownloadJson">
+              Descargar .json
+            </button>
+            <button type="button" id="btn-copy-netscape" class="btn btn-cyan" data-i18n="btnCopyNetscape">
+              Copiar Netscape
+            </button>
+            <button type="button" id="btn-download-netscape" class="btn btn-secondary" data-i18n="btnDownloadNetscape">
+              Descargar cookies.txt
+            </button>
+          </div>
+          <pre id="export-preview" class="export-preview"></pre>
+        </div>
+
+        <div id="io-panel-import" class="modal-body hidden">
+          <label for="import-textarea" class="import-label" data-i18n="importLabel">
+            Pega cookies en formato JSON o Netscape cookies.txt (o carga un archivo):
+          </label>
+          <textarea
+            id="import-textarea"
+            class="import-textarea"
+            rows="8"
+            spellcheck="false"
+            placeholder='[{"name":"sid","value":"abc123","domain":"example.com","path":"/"}]'
+          ></textarea>
+          <input type="file" id="import-file-input" class="hidden" accept=".json,.txt,application/json,text/plain" />
+          <p id="import-error" class="form-error hidden"></p>
+          <div class="modal-footer">
+            <button type="button" id="btn-load-file" class="btn btn-secondary" data-i18n="btnLoadFile">
+              Cargar archivo
+            </button>
+            <button type="button" id="btn-apply-import" class="btn btn-primary" data-i18n="btnApplyImport">
+              Importar cookies
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Confirmar borrado total -->
+    <div id="modal-confirm" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="modal-card modal-card-sm">
+        <div class="modal-header">
+          <h2 id="confirm-title" data-i18n="confirmDeleteAllTitle">¿Eliminar todas las cookies?</h2>
+          <button type="button" class="modal-close" data-close-modal="modal-confirm" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-desc" data-i18n="confirmDeleteAllDesc">
+            Se eliminarán todas las cookies visibles del dominio actual. Esta acción no se puede deshacer.
+          </p>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal="modal-confirm" data-i18n="btnCancel">
+              Cancelar
+            </button>
+            <button type="button" id="btn-confirm-delete-all" class="btn btn-danger" data-i18n="btnConfirmDeleteAll">
+              Sí, borrar todas
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

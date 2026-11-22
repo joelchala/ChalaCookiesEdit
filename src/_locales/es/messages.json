@@ -1,0 +1,302 @@
+{
+  "extName": {
+    "message": "ChalaCookiesEdit — Editor y Gestor de Cookies",
+    "description": "Nombre oficial de la extensión"
+  },
+  "extDescription": {
+    "message": "Edita, inspecciona JWT, bloquea, importa y exporta cookies (JSON y Netscape) 100% local y sin rastreo. Suite Chala.",
+    "description": "Descripción breve para tienda (<= 132 caracteres)"
+  },
+  "actionTitle": {
+    "message": "ChalaCookiesEdit — Gestionar cookies de la pestaña actual",
+    "description": "Tooltip del botón en la barra del navegador"
+  },
+  "btnNewCookie": {
+    "message": "Nueva cookie",
+    "description": "Botón para crear cookie"
+  },
+  "btnImportExport": {
+    "message": "Importar / Exportar",
+    "description": "Botón para abrir modal de importación y exportación"
+  },
+  "btnReloadTab": {
+    "message": "Recargar pestaña",
+    "description": "Botón para recargar la pestaña activa"
+  },
+  "btnDeleteAll": {
+    "message": "Borrar todas",
+    "description": "Botón para eliminar todas las cookies del dominio actual"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar por nombre o valor...",
+    "description": "Placeholder del buscador de cookies"
+  },
+  "filterAll": {
+    "message": "Todas",
+    "description": "Filtro todas las cookies"
+  },
+  "filterHttpOnly": {
+    "message": "HttpOnly",
+    "description": "Filtro cookies HttpOnly"
+  },
+  "filterSecure": {
+    "message": "Secure",
+    "description": "Filtro cookies Secure"
+  },
+  "filterSession": {
+    "message": "Sesión",
+    "description": "Filtro cookies de sesión"
+  },
+  "filterBlocked": {
+    "message": "Bloqueadas",
+    "description": "Filtro cookies bloqueadas"
+  },
+  "restrictedTitle": {
+    "message": "Página interna o protegida del navegador",
+    "description": "Título del aviso cuando la pestaña activa tiene URL restringida"
+  },
+  "restrictedDesc": {
+    "message": "Por seguridad de Chromium/Edge, no es posible leer ni modificar cookies en URLs como chrome://, edge://, about: o páginas de extensiones. Navega a un sitio web http:// o https:// para gestionar sus cookies.",
+    "description": "Explicación de URL restringida"
+  },
+  "emptyTitle": {
+    "message": "Sin cookies que coincidan",
+    "description": "Título de estado vacío"
+  },
+  "emptyDesc": {
+    "message": "Este dominio no tiene cookies visibles o el filtro actual no devuelve resultados.",
+    "description": "Descripción de estado vacío"
+  },
+  "emptyBlockedDesc": {
+    "message": "No hay reglas de bloqueo activas para este dominio.",
+    "description": "Descripción de lista de bloqueadas vacía"
+  },
+  "badgeHttpOnly": {
+    "message": "HttpOnly",
+    "description": "Insignia HttpOnly"
+  },
+  "badgeSecure": {
+    "message": "Secure",
+    "description": "Insignia Secure"
+  },
+  "badgeSession": {
+    "message": "Sesión",
+    "description": "Insignia cookie de sesión"
+  },
+  "badgeBlocked": {
+    "message": "Bloqueada",
+    "description": "Insignia cookie bloqueada"
+  },
+  "badgeJwt": {
+    "message": "JWT",
+    "description": "Insignia cookie con token JWT"
+  },
+  "badgeHostOnly": {
+    "message": "Host-only",
+    "description": "Insignia cookie host-only"
+  },
+  "btnCopy": {
+    "message": "Copiar",
+    "description": "Copiar valor"
+  },
+  "btnEdit": {
+    "message": "Editar",
+    "description": "Editar cookie"
+  },
+  "btnDuplicate": {
+    "message": "Duplicar",
+    "description": "Duplicar cookie"
+  },
+  "btnBlock": {
+    "message": "Bloquear",
+    "description": "Bloquear cookie"
+  },
+  "btnUnblock": {
+    "message": "Desbloquear",
+    "description": "Desbloquear cookie"
+  },
+  "btnDelete": {
+    "message": "Eliminar",
+    "description": "Eliminar cookie"
+  },
+  "jwtInspectorTitle": {
+    "message": "Inspector JWT (decodificación 100% local)",
+    "description": "Título del panel colapsable JWT"
+  },
+  "jwtHeader": {
+    "message": "Header",
+    "description": "Encabezado JWT"
+  },
+  "jwtPayload": {
+    "message": "Payload",
+    "description": "Carga útil JWT"
+  },
+  "jwtValid": {
+    "message": "Vigente",
+    "description": "Estado JWT vigente"
+  },
+  "jwtExpired": {
+    "message": "Expirado",
+    "description": "Estado JWT expirado"
+  },
+  "jwtNotYetValid": {
+    "message": "Aún no válido",
+    "description": "Estado JWT nbf futuro"
+  },
+  "jwtNoExp": {
+    "message": "Sin expiración (exp)",
+    "description": "Estado JWT sin claim exp"
+  },
+  "modalCreateTitle": {
+    "message": "Nueva cookie",
+    "description": "Título modal crear"
+  },
+  "modalEditTitle": {
+    "message": "Editar cookie",
+    "description": "Título modal editar"
+  },
+  "modalDuplicateTitle": {
+    "message": "Duplicar cookie",
+    "description": "Título modal duplicar"
+  },
+  "labelName": {
+    "message": "Nombre",
+    "description": "Campo nombre"
+  },
+  "labelValue": {
+    "message": "Valor",
+    "description": "Campo valor"
+  },
+  "labelDomain": {
+    "message": "Dominio",
+    "description": "Campo dominio"
+  },
+  "domainHint": {
+    "message": "Vacío o host exacto = host-only. Inicia con punto (.ejemplo.com) para compartir con subdominios.",
+    "description": "Ayuda del campo dominio"
+  },
+  "labelPath": {
+    "message": "Ruta (Path)",
+    "description": "Campo path"
+  },
+  "labelSameSite": {
+    "message": "SameSite",
+    "description": "Campo SameSite"
+  },
+  "labelExpiration": {
+    "message": "Expiración",
+    "description": "Campo fecha de expiración"
+  },
+  "labelSessionCookie": {
+    "message": "Cookie de sesión (sin expiración)",
+    "description": "Checkbox cookie de sesión"
+  },
+  "labelHttpOnly": {
+    "message": "HttpOnly",
+    "description": "Checkbox HttpOnly"
+  },
+  "labelSecure": {
+    "message": "Secure (solo HTTPS)",
+    "description": "Checkbox Secure"
+  },
+  "sameSiteSecureNotice": {
+    "message": "SameSite=None requiere Secure=true automáticamente en Chromium.",
+    "description": "Aviso regla SameSite=None"
+  },
+  "btnSave": {
+    "message": "Guardar cookie",
+    "description": "Botón guardar"
+  },
+  "btnCancel": {
+    "message": "Cancelar",
+    "description": "Botón cancelar"
+  },
+  "modalIoTitle": {
+    "message": "Importar / Exportar cookies",
+    "description": "Título modal importar/exportar"
+  },
+  "tabExport": {
+    "message": "Exportar",
+    "description": "Pestaña exportar"
+  },
+  "tabImport": {
+    "message": "Importar",
+    "description": "Pestaña importar"
+  },
+  "btnCopyJson": {
+    "message": "Copiar JSON",
+    "description": "Copiar cookies en JSON"
+  },
+  "btnDownloadJson": {
+    "message": "Descargar .json",
+    "description": "Descargar archivo JSON"
+  },
+  "btnCopyNetscape": {
+    "message": "Copiar Netscape",
+    "description": "Copiar formato Netscape cookies.txt"
+  },
+  "btnDownloadNetscape": {
+    "message": "Descargar cookies.txt",
+    "description": "Descargar formato Netscape"
+  },
+  "importLabel": {
+    "message": "Pega cookies en formato JSON o Netscape cookies.txt (o carga un archivo):",
+    "description": "Etiqueta textarea importación"
+  },
+  "btnLoadFile": {
+    "message": "Cargar archivo",
+    "description": "Botón seleccionar archivo"
+  },
+  "btnApplyImport": {
+    "message": "Importar cookies",
+    "description": "Botón ejecutar importación"
+  },
+  "confirmDeleteAllTitle": {
+    "message": "¿Eliminar todas las cookies?",
+    "description": "Título confirmación borrado masivo"
+  },
+  "confirmDeleteAllDesc": {
+    "message": "Se eliminarán todas las cookies visibles del dominio actual. Esta acción no se puede deshacer.",
+    "description": "Descripción confirmación borrado masivo"
+  },
+  "btnConfirmDeleteAll": {
+    "message": "Sí, borrar todas",
+    "description": "Confirmar borrado masivo"
+  },
+  "toastCopied": {
+    "message": "Copiado al portapapeles",
+    "description": "Aviso copia exitosa"
+  },
+  "toastSaved": {
+    "message": "Cookie guardada correctamente",
+    "description": "Aviso guardado exitoso"
+  },
+  "toastDeleted": {
+    "message": "Cookie eliminada",
+    "description": "Aviso borrado exitoso"
+  },
+  "toastCleared": {
+    "message": "Cookies del dominio eliminadas",
+    "description": "Aviso borrado total exitoso"
+  },
+  "toastBlocked": {
+    "message": "Cookie bloqueada y eliminada",
+    "description": "Aviso bloqueo exitoso"
+  },
+  "toastUnblocked": {
+    "message": "Cookie desbloqueada",
+    "description": "Aviso desbloqueo exitoso"
+  },
+  "toastImported": {
+    "message": "Cookies importadas correctamente",
+    "description": "Aviso importación exitosa"
+  },
+  "toastError": {
+    "message": "No se pudo completar la operación",
+    "description": "Aviso error genérico"
+  },
+  "footerSupport": {
+    "message": "Apoyar (PayPal)",
+    "description": "Enlace de apoyo en footer"
+  }
+}

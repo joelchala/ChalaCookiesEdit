@@ -1,0 +1,302 @@
+{
+  "extName": {
+    "message": "ChalaCookiesEdit — Cookie Editor & Manager",
+    "description": "Official extension name"
+  },
+  "extDescription": {
+    "message": "Edit, inspect JWTs, block, import and export cookies (JSON & Netscape) 100% locally with zero tracking. Part of Suite Chala.",
+    "description": "Short store description (<= 132 chars)"
+  },
+  "actionTitle": {
+    "message": "ChalaCookiesEdit — Manage cookies for the current tab",
+    "description": "Toolbar button tooltip"
+  },
+  "btnNewCookie": {
+    "message": "New cookie",
+    "description": "Create cookie button"
+  },
+  "btnImportExport": {
+    "message": "Import / Export",
+    "description": "Open import and export modal button"
+  },
+  "btnReloadTab": {
+    "message": "Reload tab",
+    "description": "Reload active tab button"
+  },
+  "btnDeleteAll": {
+    "message": "Delete all",
+    "description": "Delete all cookies for current domain button"
+  },
+  "searchPlaceholder": {
+    "message": "Search by name or value...",
+    "description": "Cookie search input placeholder"
+  },
+  "filterAll": {
+    "message": "All",
+    "description": "All cookies filter"
+  },
+  "filterHttpOnly": {
+    "message": "HttpOnly",
+    "description": "HttpOnly cookies filter"
+  },
+  "filterSecure": {
+    "message": "Secure",
+    "description": "Secure cookies filter"
+  },
+  "filterSession": {
+    "message": "Session",
+    "description": "Session cookies filter"
+  },
+  "filterBlocked": {
+    "message": "Blocked",
+    "description": "Blocked cookies filter"
+  },
+  "restrictedTitle": {
+    "message": "Internal or protected browser page",
+    "description": "Title shown when active tab has a restricted URL"
+  },
+  "restrictedDesc": {
+    "message": "For Chromium/Edge security, cookies cannot be read or modified on chrome://, edge://, about:, or extension pages. Navigate to an http:// or https:// website to manage its cookies.",
+    "description": "Restricted URL explanation"
+  },
+  "emptyTitle": {
+    "message": "No matching cookies",
+    "description": "Empty state title"
+  },
+  "emptyDesc": {
+    "message": "This domain has no visible cookies or the current filter returned no matches.",
+    "description": "Empty state description"
+  },
+  "emptyBlockedDesc": {
+    "message": "There are no active blocking rules for this domain.",
+    "description": "Empty blocked list description"
+  },
+  "badgeHttpOnly": {
+    "message": "HttpOnly",
+    "description": "HttpOnly badge"
+  },
+  "badgeSecure": {
+    "message": "Secure",
+    "description": "Secure badge"
+  },
+  "badgeSession": {
+    "message": "Session",
+    "description": "Session cookie badge"
+  },
+  "badgeBlocked": {
+    "message": "Blocked",
+    "description": "Blocked cookie badge"
+  },
+  "badgeJwt": {
+    "message": "JWT",
+    "description": "JWT token cookie badge"
+  },
+  "badgeHostOnly": {
+    "message": "Host-only",
+    "description": "Host-only cookie badge"
+  },
+  "btnCopy": {
+    "message": "Copy",
+    "description": "Copy value"
+  },
+  "btnEdit": {
+    "message": "Edit",
+    "description": "Edit cookie"
+  },
+  "btnDuplicate": {
+    "message": "Duplicate",
+    "description": "Duplicate cookie"
+  },
+  "btnBlock": {
+    "message": "Block",
+    "description": "Block cookie"
+  },
+  "btnUnblock": {
+    "message": "Unblock",
+    "description": "Unblock cookie"
+  },
+  "btnDelete": {
+    "message": "Delete",
+    "description": "Delete cookie"
+  },
+  "jwtInspectorTitle": {
+    "message": "JWT Inspector (100% local decoding)",
+    "description": "Collapsible JWT panel title"
+  },
+  "jwtHeader": {
+    "message": "Header",
+    "description": "JWT Header"
+  },
+  "jwtPayload": {
+    "message": "Payload",
+    "description": "JWT Payload"
+  },
+  "jwtValid": {
+    "message": "Valid",
+    "description": "JWT valid status"
+  },
+  "jwtExpired": {
+    "message": "Expired",
+    "description": "JWT expired status"
+  },
+  "jwtNotYetValid": {
+    "message": "Not yet valid",
+    "description": "JWT future nbf status"
+  },
+  "jwtNoExp": {
+    "message": "No expiration (exp)",
+    "description": "JWT without exp claim"
+  },
+  "modalCreateTitle": {
+    "message": "New cookie",
+    "description": "Create modal title"
+  },
+  "modalEditTitle": {
+    "message": "Edit cookie",
+    "description": "Edit modal title"
+  },
+  "modalDuplicateTitle": {
+    "message": "Duplicate cookie",
+    "description": "Duplicate modal title"
+  },
+  "labelName": {
+    "message": "Name",
+    "description": "Name field"
+  },
+  "labelValue": {
+    "message": "Value",
+    "description": "Value field"
+  },
+  "labelDomain": {
+    "message": "Domain",
+    "description": "Domain field"
+  },
+  "domainHint": {
+    "message": "Empty or exact host = host-only. Start with a dot (.example.com) to share with subdomains.",
+    "description": "Domain field hint"
+  },
+  "labelPath": {
+    "message": "Path",
+    "description": "Path field"
+  },
+  "labelSameSite": {
+    "message": "SameSite",
+    "description": "SameSite field"
+  },
+  "labelExpiration": {
+    "message": "Expiration",
+    "description": "Expiration date field"
+  },
+  "labelSessionCookie": {
+    "message": "Session cookie (no expiration)",
+    "description": "Session cookie checkbox"
+  },
+  "labelHttpOnly": {
+    "message": "HttpOnly",
+    "description": "HttpOnly checkbox"
+  },
+  "labelSecure": {
+    "message": "Secure (HTTPS only)",
+    "description": "Secure checkbox"
+  },
+  "sameSiteSecureNotice": {
+    "message": "SameSite=None automatically enforces Secure=true in Chromium.",
+    "description": "SameSite=None rule notice"
+  },
+  "btnSave": {
+    "message": "Save cookie",
+    "description": "Save button"
+  },
+  "btnCancel": {
+    "message": "Cancel",
+    "description": "Cancel button"
+  },
+  "modalIoTitle": {
+    "message": "Import / Export cookies",
+    "description": "Import/Export modal title"
+  },
+  "tabExport": {
+    "message": "Export",
+    "description": "Export tab"
+  },
+  "tabImport": {
+    "message": "Import",
+    "description": "Import tab"
+  },
+  "btnCopyJson": {
+    "message": "Copy JSON",
+    "description": "Copy cookies as JSON"
+  },
+  "btnDownloadJson": {
+    "message": "Download .json",
+    "description": "Download JSON file"
+  },
+  "btnCopyNetscape": {
+    "message": "Copy Netscape",
+    "description": "Copy Netscape cookies.txt format"
+  },
+  "btnDownloadNetscape": {
+    "message": "Download cookies.txt",
+    "description": "Download Netscape file"
+  },
+  "importLabel": {
+    "message": "Paste cookies in JSON or Netscape cookies.txt format (or load a file):",
+    "description": "Import textarea label"
+  },
+  "btnLoadFile": {
+    "message": "Load file",
+    "description": "Choose file button"
+  },
+  "btnApplyImport": {
+    "message": "Import cookies",
+    "description": "Run import button"
+  },
+  "confirmDeleteAllTitle": {
+    "message": "Delete all cookies?",
+    "description": "Delete all confirmation title"
+  },
+  "confirmDeleteAllDesc": {
+    "message": "All visible cookies for the current domain will be deleted. This action cannot be undone.",
+    "description": "Delete all confirmation description"
+  },
+  "btnConfirmDeleteAll": {
+    "message": "Yes, delete all",
+    "description": "Confirm delete all"
+  },
+  "toastCopied": {
+    "message": "Copied to clipboard",
+    "description": "Copied notification"
+  },
+  "toastSaved": {
+    "message": "Cookie saved successfully",
+    "description": "Saved notification"
+  },
+  "toastDeleted": {
+    "message": "Cookie deleted",
+    "description": "Deleted notification"
+  },
+  "toastCleared": {
+    "message": "Domain cookies cleared",
+    "description": "Cleared notification"
+  },
+  "toastBlocked": {
+    "message": "Cookie blocked and removed",
+    "description": "Blocked notification"
+  },
+  "toastUnblocked": {
+    "message": "Cookie unblocked",
+    "description": "Unblocked notification"
+  },
+  "toastImported": {
+    "message": "Cookies imported successfully",
+    "description": "Imported notification"
+  },
+  "toastError": {
+    "message": "Could not complete operation",
+    "description": "Generic error notification"
+  },
+  "footerSupport": {
+    "message": "Support (PayPal)",
+    "description": "Footer support link"
+  }
+}

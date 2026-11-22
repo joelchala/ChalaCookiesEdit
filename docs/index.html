@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChalaCookiesEdit — Documentación / Documentation</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --border: #334155;
+        --text: #f1f5f9;
+        --muted: #94a3b8;
+        --emerald: #10b981;
+        --cyan: #06b6d4;
+        --danger: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+        line-height: 1.6;
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      .title-box h1 {
+        margin: 0;
+        font-size: 26px;
+        color: var(--text);
+      }
+      .title-box p {
+        margin: 4px 0 0;
+        color: var(--cyan);
+        font-size: 14px;
+      }
+      .lang-switch {
+        display: inline-flex;
+        gap: 6px;
+        background: var(--surface);
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .lang-btn {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .lang-btn.active {
+        background: var(--emerald);
+        color: #06281e;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+      }
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: var(--emerald);
+      }
+      .card p, .card li {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      code, pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: #0b1120;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      code {
+        padding: 2px 6px;
+        color: var(--cyan);
+      }
+      pre {
+        padding: 12px;
+        overflow-x: auto;
+        color: #a7f3d0;
+        font-size: 13px;
+      }
+      .hidden { display: none; }
+      footer {
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      a { color: var(--cyan); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title-box">
+          <h1>ChalaCookiesEdit</h1>
+          <p>Suite Chala · Escudo Cibernético · Manifest V3</p>
+        </div>
+        <div class="lang-switch" role="group" aria-label="Idioma / Language">
+          <button type="button" class="lang-btn active" data-lang="es">Español</button>
+          <button type="button" class="lang-btn" data-lang="en">English</button>
+        </div>
+      </header>
+
+      <section id="doc-es">
+        <div class="grid">
+          <article class="card">
+            <h2>1. Gestión CRUD y reglas MV3</h2>
+            <p>Crea, edita, duplica o elimina cookies en la pestaña activa:</p>
+            <ul>
+              <li><strong>Host-only vs Subdominios:</strong> deja el campo dominio vacío o con el host exacto para cookies host-only; inicia con punto (<code>.ejemplo.com</code>) para compartir con subdominios.</li>
+              <li><strong>SameSite=None:</strong> la extensión fuerza automáticamente <code>Secure = true</code> y URL <code>https://</code> antes de invocar <code>chrome.cookies.set</code>.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h2>2. Inspector JWT 100 % local</h2>
+            <p>Al expandir o editar cualquier cookie con formato <code>header.payload.signature</code>, ChalaCookiesEdit decodifica Base64URL en memoria local y muestra el <em>Header</em>, <em>Payload</em> y el estado de vigencia (<code>exp</code> / <code>nbf</code>).</p>
+          </article>
+          <article class="card">
+            <h2>3. Bloqueo persistente</h2>
+            <p>Marca cualquier cookie como <strong>Bloqueada</strong> (guardada por <code>dominio + nombre</code> en <code>chrome.storage.local</code>). El Service Worker escucha <code>chrome.cookies.onChanged</code> y la elimina automáticamente si el sitio intenta regenerarla.</p>
+          </article>
+          <article class="card">
+            <h2>4. Importar y Exportar</h2>
+            <p>Exporta en <strong>JSON</strong> o formato <strong>Netscape cookies.txt</strong> (compatible con <code>curl</code> y <code>yt-dlp</code>, incluyendo el prefijo <code>#HttpOnly_</code>) o importa pegando texto o cargando un archivo local.</p>
+          </article>
+        </div>
+
+        <article class="card" style="margin-top: 16px;">
+          <h2>Compilación y pruebas locales (Node.js &gt;= 22)</h2>
+          <pre>npm run icons
+npm test
+npm run build</pre>
+        </article>
+      </section>
+
+      <section id="doc-en" class="hidden">
+        <div class="grid">
+          <article class="card">
+            <h2>1. Full CRUD &amp; MV3 Rules</h2>
+            <p>Create, edit, duplicate, or delete cookies for the active tab:</p>
+            <ul>
+              <li><strong>Host-only vs Subdomains:</strong> leave the domain field empty or equal to the exact host for host-only cookies; start with a dot (<code>.example.com</code>) to include subdomains.</li>
+              <li><strong>SameSite=None:</strong> automatically enforces <code>Secure = true</code> and an <code>https://</code> URL before calling <code>chrome.cookies.set</code>.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h2>2. 100% Local JWT Inspector</h2>
+            <p>Expanding or editing any cookie formatted as <code>header.payload.signature</code> automatically decodes Base64URL in local memory and displays formatted <em>Header</em>, <em>Payload</em>, and expiration status (<code>exp</code> / <code>nbf</code>).</p>
+          </article>
+          <article class="card">
+            <h2>3. Persistent Cookie Blocking</h2>
+            <p>Mark any cookie as <strong>Blocked</strong> (stored by <code>domain + name</code> in <code>chrome.storage.local</code>). The Service Worker listens to <code>chrome.cookies.onChanged</code> and removes it immediately whenever the site attempts to recreate it.</p>
+          </article>
+          <article class="card">
+            <h2>4. Import &amp; Export</h2>
+            <p>Export to <strong>JSON</strong> or standard <strong>Netscape cookies.txt</strong> (ready for <code>curl</code> and <code>yt-dlp</code>, including <code>#HttpOnly_</code>), or import by pasting text or uploading a file.</p>
+          </article>
+        </div>
+
+        <article class="card" style="margin-top: 16px;">
+          <h2>Local Build &amp; Verification (Node.js &gt;= 22)</h2>
+          <pre>npm run icons
+npm test
+npm run build</pre>
+        </article>
+      </section>
+
+      <footer>
+        <span>© 2026 Joel Rafael Chala García / Coposys</span>
+        <span>
+          <a href="https://chaladev.site" target="_blank" rel="noopener noreferrer">Suite Chala</a> ·
+          <a href="https://coposys.com.do" target="_blank" rel="noopener noreferrer">Coposys</a> ·
+          <a href="https://www.paypal.com/paypalme/coposys" target="_blank" rel="noopener noreferrer">PayPal</a>
+        </span>
+      </footer>
+    </div>
+
+    <script>
+      const buttons = document.querySelectorAll('.lang-btn');
+      const secEs = document.getElementById('doc-es');
+      const secEn = document.getElementById('doc-en');
+      for (const btn of buttons) {
+        btn.addEventListener('click', () => {
+          const lang = btn.getAttribute('data-lang');
+          for (const b of buttons) b.classList.toggle('active', b === btn);
+          secEs.classList.toggle('hidden', lang !== 'es');
+          secEn.classList.toggle('hidden', lang !== 'en');
+          document.documentElement.lang = lang;
+        });
+      }
+    </script>
+  </body>
+</html>
