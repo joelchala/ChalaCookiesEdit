@@ -1,5 +1,11 @@
 /dist/build/
 /store/paquetes/
+.env
+.env.*
+*.pem
+*.key
+credentials*.json
+secrets*.json
 .DS_Store
 Thumbs.db
 *.log

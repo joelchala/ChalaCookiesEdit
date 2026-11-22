@@ -21,6 +21,26 @@
 
 ---
 
+## Versión y lanzamientos (`v1.0.0`)
+
+- **Versión actual:** `v1.0.0` (sincronizada en `dist/version`, `package.json` y `src/manifest.json`).
+- **Release en GitHub:** [Release v1.0.0](https://github.com/joelchala/ChalaCookiesEdit/releases/tag/v1.0.0) con paquetes listos para tienda adjuntos (`ChalaCookiesEdit_1.0.0.chromium.zip` y `ChalaCookiesEdit_1.0.0.edge.zip`).
+- **CI/CD automático:** Cada push a `main` ejecuta `generate-icons.mjs`, `tests/verify.mjs` y `make-mv3.mjs`; los tags `v*` publican automáticamente el Release en GitHub.
+
+---
+
+## Compatibilidad
+
+| Componente / Plataforma | Requisito o soporte | Notas |
+| :--- | :--- | :--- |
+| **Google Chrome / Chromium** | `>= 109` (`minimum_chrome_version`) | Manifest V3 con Service Worker ES module (`"type": "module"`). |
+| **Microsoft Edge** | `>= 109` (basado en Chromium) | Compatible con carga descomprimida y paquete `.edge.zip`. |
+| **Node.js (Build & Tests)** | `>= 22.0.0` | Cero `dependencies` y cero `devDependencies`; probado en Windows, macOS y Linux. |
+| **Formatos de intercambio** | JSON y Netscape `cookies.txt` | Compatible con `curl`, `wget` y `yt-dlp` (incluye `#HttpOnly_`). |
+| **Reglas de seguridad MV3** | `SameSite=None` y URLs internas | Fuerza `Secure=true` + `https://` en `SameSite=None`; omite `chrome://`, `edge://`, `about:` y `chrome-extension://`. |
+
+---
+
 ## Requisitos y estructura
 
 - **Node.js >= 22** (cero `dependencies` y cero `devDependencies`).
