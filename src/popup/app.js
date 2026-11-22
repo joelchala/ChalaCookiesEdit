@@ -9,15 +9,24 @@ import { SUITE_LINKS } from '../config.js';
 import {
   buildCookieRemovalDetails,
   buildCookieSetDetails,
+  classifyImportedCookies,
   detectAndParseCookies,
   exportCookiesToJson,
   exportCookiesToNetscape,
   getBlockedCookieKey,
+  getCookieIdentity,
   getCookiesForTabUrl,
+  isDomainRelated,
   isRestrictedUrl,
-  normalizeDomain
+  normalizeDomain,
+  normalizePartitionKey,
+  normalizeStoreId,
+  resolveCookieStoreId
 } from '../lib/cookie-formats.js';
 import { formatJwtRelativeTime, inspectJwt } from '../lib/jwt-inspector.js';
+
+/** Límite de tamaño de archivo de importación (2 MB). */
+const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
 /**
  * Helper i18n seguro con respaldo en español.
@@ -45,19 +54,6 @@ function getUiLocale() {
   } catch {
     return 'es';
   }
-}
-
-/**
- * Comprueba si una regla de dominio bloqueada aplica al host activo.
- * @param {string} ruleDomain
- * @param {string} currentHost
- * @returns {boolean}
- */
-function isDomainRelated(ruleDomain, currentHost) {
-  const a = normalizeDomain(ruleDomain);
-  const b = normalizeDomain(currentHost);
-  if (!a || !b) return false;
-  return a === b || b.endsWith(`.${a}`) || a.endsWith(`.${b}`);
 }
 
 /**
@@ -90,12 +86,32 @@ function fromDatetimeLocalValue(value) {
 }
 
 /**
- * Genera una firma única de cookie para rastrear elementos expandidos o reemplazos.
+ * Genera una firma única de cookie (store + partición CHIPS + dominio + ruta + nombre)
+ * para rastrear elementos expandidos o reemplazos.
  * @param {Record<string, any>} cookie
  * @returns {string}
  */
 function getCookieSignature(cookie) {
-  return `${cookie.storeId || ''}::${cookie.domain}::${cookie.path}::${cookie.name}`;
+  return getCookieIdentity(cookie);
+}
+
+/**
+ * Parámetros de eliminación de una cookie dentro del store activo (incluye partitionKey).
+ * @param {Record<string, any>} cookie
+ * @returns {Record<string, any>}
+ */
+function removalDetailsFor(cookie) {
+  const fallbackProtocol = state.activeTab?.url ? new URL(state.activeTab.url).protocol : 'https:';
+  return buildCookieRemovalDetails(cookie, fallbackProtocol, { storeId: state.storeId });
+}
+
+/**
+ * Comprueba si una regla de bloqueo pertenece al store activo.
+ * @param {{ storeId?: string }} rule
+ * @returns {boolean}
+ */
+function isRuleInActiveStore(rule) {
+  return normalizeStoreId(rule?.storeId) === normalizeStoreId(state.storeId);
 }
 
 /**
@@ -123,7 +139,11 @@ const state = {
   expandedKeys: new Set(),
   editorMode: 'create',
   editingOriginal: null,
-  toastTimer: null
+  toastTimer: null,
+  /** @type {string | undefined} Cookie store real de la pestaña activa (normal / incógnito). */
+  storeId: undefined,
+  /** @type {null | { allowed: any[], external: any[], invalid: any[], externalDomains: string[] }} */
+  pendingImport: null
 };
 
 const dom = {
@@ -182,6 +202,11 @@ const dom = {
   btnLoadFile: document.getElementById('btn-load-file'),
   btnApplyImport: document.getElementById('btn-apply-import'),
   importError: document.getElementById('import-error'),
+  importWarning: document.getElementById('import-warning'),
+  importWarningDesc: document.getElementById('import-warning-desc'),
+  importWarningDomains: document.getElementById('import-warning-domains'),
+  btnImportOnlyCurrent: document.getElementById('btn-import-only-current'),
+  btnImportIncludeExternal: document.getElementById('btn-import-include-external'),
   modalConfirm: document.getElementById('modal-confirm'),
   btnConfirmDeleteAll: document.getElementById('btn-confirm-delete-all'),
   toast: document.getElementById('toast')
@@ -306,7 +331,9 @@ function buildJwtPanelElement(jwtInfo) {
  * Actualiza los contadores de los filtros rápidos.
  */
 function updateFilterCounts() {
-  const domainBlocked = state.blockedRules.filter((r) => isDomainRelated(r.domain, state.activeHost));
+  const domainBlocked = state.blockedRules.filter(
+    (r) => isRuleInActiveStore(r) && isDomainRelated(r.domain, state.activeHost)
+  );
   dom.countAll.textContent = String(state.cookies.length);
   dom.countHttpOnly.textContent = String(state.cookies.filter((c) => c.httpOnly).length);
   dom.countSecure.textContent = String(state.cookies.filter((c) => c.secure).length);
@@ -341,7 +368,7 @@ function renderBlockedRulesList() {
   dom.cookieList.innerHTML = '';
   const q = state.search.trim().toLowerCase();
   const rules = state.blockedRules
-    .filter((r) => isDomainRelated(r.domain, state.activeHost))
+    .filter((r) => isRuleInActiveStore(r) && isDomainRelated(r.domain, state.activeHost))
     .filter((r) => !q || r.name.toLowerCase().includes(q) || r.domain.toLowerCase().includes(q));
 
   if (rules.length === 0) {
@@ -371,7 +398,7 @@ function renderBlockedRulesList() {
     unblockBtn.type = 'button';
     unblockBtn.addEventListener('click', async (ev) => {
       ev.stopPropagation();
-      await unblockCookieRule(rule.domain, rule.name);
+      await unblockCookieRule(rule.domain, rule.name, rule.storeId);
     });
     actions.appendChild(unblockBtn);
 
@@ -411,7 +438,10 @@ function renderCookieList() {
   for (const cookie of items) {
     const sig = getCookieSignature(cookie);
     const isExpanded = state.expandedKeys.has(sig);
-    const isBlocked = blockedSet.has(getBlockedCookieKey(cookie.domain, cookie.name));
+    const isBlocked = blockedSet.has(
+      getBlockedCookieKey(cookie.domain, cookie.name, cookie.storeId || state.storeId)
+    );
+    const partitionKey = normalizePartitionKey(cookie.partitionKey);
     const jwtInfo = inspectJwt(cookie.value);
 
     const card = createEl('article', `cookie-card${isBlocked ? ' is-blocked' : ''}`);
@@ -445,6 +475,11 @@ function renderCookieList() {
     }
     if (cookie.hostOnly) {
       badges.appendChild(createEl('span', 'badge badge-hostonly', t('badgeHostOnly', 'Host-only')));
+    }
+    if (partitionKey) {
+      const pBadge = createEl('span', 'badge badge-partitioned', t('badgePartitioned', 'Partitioned'));
+      pBadge.title = partitionKey.topLevelSite || '';
+      badges.appendChild(pBadge);
     }
     if (jwtInfo) {
       badges.appendChild(createEl('span', 'badge badge-jwt', t('badgeJwt', 'JWT')));
@@ -480,7 +515,7 @@ function renderCookieList() {
     blockBtn.addEventListener('click', async (ev) => {
       ev.stopPropagation();
       if (isBlocked) {
-        await unblockCookieRule(cookie.domain, cookie.name);
+        await unblockCookieRule(cookie.domain, cookie.name, cookie.storeId || state.storeId);
       } else {
         await blockCookieRule(cookie);
       }
@@ -529,6 +564,9 @@ function renderCookieList() {
 
       appendMeta('SameSite', cookie.sameSite || 'unspecified');
       appendMeta(t('labelExpiration', 'Expiración'), expText);
+      if (partitionKey) {
+        appendMeta(t('labelPartition', 'Partición (CHIPS)'), partitionKey.topLevelSite || '—');
+      }
       details.appendChild(meta);
 
       if (jwtInfo) {
@@ -579,8 +617,12 @@ function triggerDownload(filename, content, mimeType) {
 async function refreshData() {
   if (!state.activeTab || state.restricted) return;
 
+  if (!state.storeId && state.activeTab.id !== undefined) {
+    state.storeId = await resolveCookieStoreId(chrome.cookies, state.activeTab.id);
+  }
+
   const [cookies, bgRes] = await Promise.all([
-    getCookiesForTabUrl(chrome.cookies, state.activeTab.url),
+    getCookiesForTabUrl(chrome.cookies, state.activeTab.url, { storeId: state.storeId }),
     sendBgMessage({ type: 'GET_BLOCKED_COOKIES' })
   ]);
 
@@ -591,21 +633,20 @@ async function refreshData() {
   await sendBgMessage({
     type: 'REFRESH_BADGE',
     tabId: state.activeTab.id,
-    tabUrl: state.activeTab.url
+    tabUrl: state.activeTab.url,
+    storeId: state.storeId
   });
 
   renderCookieList();
 }
 
 /**
- * Elimina una única cookie.
+ * Elimina una única cookie dentro del store activo (incluyendo partitionKey si existe).
  * @param {Record<string, any>} cookie
  */
 async function deleteSingleCookie(cookie) {
   try {
-    const fallbackProtocol = state.activeTab?.url ? new URL(state.activeTab.url).protocol : 'https:';
-    const details = buildCookieRemovalDetails(cookie, fallbackProtocol);
-    await chrome.cookies.remove(details);
+    await chrome.cookies.remove(removalDetailsFor(cookie));
     showToast(t('toastDeleted', 'Cookie eliminada'));
     await refreshData();
   } catch (err) {
@@ -614,7 +655,7 @@ async function deleteSingleCookie(cookie) {
 }
 
 /**
- * Bloquea una cookie persistiendo la regla en el Service Worker.
+ * Bloquea una cookie persistiendo la regla en el Service Worker (aislada por store).
  * @param {Record<string, any>} cookie
  */
 async function blockCookieRule(cookie) {
@@ -622,6 +663,7 @@ async function blockCookieRule(cookie) {
     type: 'BLOCK_COOKIE',
     domain: cookie.domain,
     name: cookie.name,
+    storeId: cookie.storeId || state.storeId,
     cookie
   });
   if (res?.ok) {
@@ -633,15 +675,17 @@ async function blockCookieRule(cookie) {
 }
 
 /**
- * Desbloquea una regla de cookie.
+ * Desbloquea una regla de cookie en el store activo.
  * @param {string} domain
  * @param {string} name
+ * @param {string} [storeId]
  */
-async function unblockCookieRule(domain, name) {
+async function unblockCookieRule(domain, name, storeId = state.storeId) {
   const res = await sendBgMessage({
     type: 'UNBLOCK_COOKIE',
     domain,
-    name
+    name,
+    storeId
   });
   if (res?.ok) {
     showToast(t('toastUnblocked', 'Cookie desbloqueada'));
@@ -704,7 +748,7 @@ function syncSameSiteSecureConstraint() {
  */
 function openEditorModal(mode, cookie = null) {
   state.editorMode = mode;
-  state.editingOriginal = mode === 'edit' ? cookie : null;
+  state.editingOriginal = mode === 'create' ? null : cookie;
   dom.editorError.classList.add('hidden');
 
   if (mode === 'create') {
@@ -748,10 +792,52 @@ function openEditorModal(mode, cookie = null) {
  * Abre el modal Importar/Exportar actualizando la vista previa de exportación.
  */
 function openIoModal() {
+  state.pendingImport = null;
   dom.importError.classList.add('hidden');
+  dom.importWarning?.classList.add('hidden');
   dom.exportPreview.textContent = exportCookiesToJson(state.cookies, true);
   switchIoTab('export');
   dom.modalIo.classList.remove('hidden');
+}
+
+/**
+ * Escribe en el navegador una lista de cookies previamente validadas,
+ * forzando el cookie store real de la pestaña activa (B2).
+ * @param {Array<Record<string, any>>} cookiesToWrite
+ * @param {number} [skippedCount=0]
+ */
+async function executeCookieImport(cookiesToWrite, skippedCount = 0) {
+  let importedCount = 0;
+  let failedCount = skippedCount;
+
+  for (const item of cookiesToWrite) {
+    try {
+      const details = buildCookieSetDetails(item, {
+        tabUrl: state.activeTab?.url,
+        storeId: state.storeId
+      });
+      const res = await chrome.cookies.set(details);
+      if (res) importedCount += 1;
+      else failedCount += 1;
+    } catch {
+      failedCount += 1;
+    }
+  }
+
+  if (importedCount === 0) {
+    throw new Error(t('toastError', 'Ninguna cookie pudo ser importada para este contexto.'));
+  }
+
+  state.pendingImport = null;
+  dom.importWarning?.classList.add('hidden');
+  closeModal('modal-io');
+  dom.importTextarea.value = '';
+  showToast(
+    failedCount > 0
+      ? `${t('toastImported', 'Cookies importadas')}: ${importedCount} (${t('labelSkipped', 'omitidas')}: ${failedCount})`
+      : `${t('toastImported', 'Cookies importadas')}: ${importedCount}`
+  );
+  await refreshData();
 }
 
 /**
@@ -853,9 +939,10 @@ function bindUiEvents() {
           expirationDate: expSeconds,
           httpOnly: dom.fieldHttpOnly.checked,
           secure: dom.fieldSecure.checked,
-          storeId: state.editingOriginal?.storeId
+          storeId: state.editingOriginal?.storeId || state.storeId,
+          partitionKey: state.editingOriginal?.partitionKey
         },
-        { tabUrl: state.activeTab?.url }
+        { tabUrl: state.activeTab?.url, storeId: state.storeId }
       );
 
       const created = await chrome.cookies.set(details);
@@ -865,10 +952,7 @@ function bindUiEvents() {
 
       if (state.editorMode === 'edit' && state.editingOriginal) {
         if (getCookieSignature(state.editingOriginal) !== getCookieSignature(created)) {
-          const fallbackProtocol = state.activeTab?.url
-            ? new URL(state.activeTab.url).protocol
-            : 'https:';
-          await chrome.cookies.remove(buildCookieRemovalDetails(state.editingOriginal, fallbackProtocol));
+          await chrome.cookies.remove(removalDetailsFor(state.editingOriginal));
         }
       }
 
@@ -924,51 +1008,83 @@ function bindUiEvents() {
   dom.importFileInput.addEventListener('change', async () => {
     const file = dom.importFileInput.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) {
+      dom.importError.textContent = t('importFileTooLarge', 'El archivo supera el límite de 2 MB.');
+      dom.importError.classList.remove('hidden');
+      dom.importFileInput.value = '';
+      return;
+    }
     dom.importTextarea.value = await file.text();
     dom.importFileInput.value = '';
+    state.pendingImport = null;
+    dom.importWarning?.classList.add('hidden');
+  });
+
+  dom.importTextarea.addEventListener('input', () => {
+    state.pendingImport = null;
+    dom.importWarning?.classList.add('hidden');
   });
 
   dom.btnApplyImport.addEventListener('click', async () => {
     dom.importError.classList.add('hidden');
+    dom.importWarning?.classList.add('hidden');
     try {
       const { cookies } = detectAndParseCookies(dom.importTextarea.value);
-      let importedCount = 0;
-      let failedCount = 0;
+      const classified = classifyImportedCookies(cookies, state.activeHost);
 
-      for (const item of cookies) {
-        try {
-          const details = buildCookieSetDetails(item, { tabUrl: state.activeTab?.url });
-          const res = await chrome.cookies.set(details);
-          if (res) importedCount += 1;
-          else failedCount += 1;
-        } catch {
-          failedCount += 1;
-        }
+      if (classified.allowed.length === 0 && classified.external.length === 0) {
+        throw new Error(
+          t('importInvalidDomainError', 'Todas las cookies fueron rechazadas por dominio inválido.')
+        );
       }
 
-      if (importedCount === 0) {
-        throw new Error(t('toastError', 'Ninguna cookie pudo ser importada para este contexto.'));
+      // Si hay dominios externos, filtrar por defecto y exigir confirmación explícita (S1).
+      if (classified.external.length > 0 && dom.importWarning) {
+        state.pendingImport = classified;
+        dom.importWarningDesc.textContent =
+          `${t('importExternalWarnDesc', 'Se detectaron cookies para dominios externos al sitio activo')} ` +
+          `(${classified.external.length} / ${cookies.length}):`;
+        dom.importWarningDomains.textContent = classified.externalDomains.join(', ');
+        dom.btnImportOnlyCurrent.disabled = classified.allowed.length === 0;
+        dom.importWarning.classList.remove('hidden');
+        return;
       }
 
-      closeModal('modal-io');
-      dom.importTextarea.value = '';
-      showToast(
-        failedCount > 0
-          ? `${t('toastImported', 'Cookies importadas')}: ${importedCount} (omitidas: ${failedCount})`
-          : `${t('toastImported', 'Cookies importadas')}: ${importedCount}`
-      );
-      await refreshData();
+      await executeCookieImport(classified.allowed, classified.invalid.length);
     } catch (err) {
       dom.importError.textContent = err?.message || t('toastError', 'Formato inválido');
       dom.importError.classList.remove('hidden');
     }
   });
 
+  dom.btnImportOnlyCurrent?.addEventListener('click', async () => {
+    if (!state.pendingImport) return;
+    dom.importError.classList.add('hidden');
+    try {
+      const { allowed, external, invalid } = state.pendingImport;
+      await executeCookieImport(allowed, external.length + invalid.length);
+    } catch (err) {
+      dom.importError.textContent = err?.message || t('toastError', 'Error al importar');
+      dom.importError.classList.remove('hidden');
+    }
+  });
+
+  dom.btnImportIncludeExternal?.addEventListener('click', async () => {
+    if (!state.pendingImport) return;
+    dom.importError.classList.add('hidden');
+    try {
+      const { allowed, external, invalid } = state.pendingImport;
+      await executeCookieImport([...allowed, ...external], invalid.length);
+    } catch (err) {
+      dom.importError.textContent = err?.message || t('toastError', 'Error al importar');
+      dom.importError.classList.remove('hidden');
+    }
+  });
+
   dom.btnConfirmDeleteAll.addEventListener('click', async () => {
     try {
-      const fallbackProtocol = state.activeTab?.url ? new URL(state.activeTab.url).protocol : 'https:';
-      await Promise.all(
-        state.cookies.map((c) => chrome.cookies.remove(buildCookieRemovalDetails(c, fallbackProtocol)))
+      await Promise.allSettled(
+        state.cookies.map((c) => chrome.cookies.remove(removalDetailsFor(c)))
       );
       closeModal('modal-confirm');
       showToast(t('toastCleared', 'Cookies del dominio eliminadas'));
@@ -1007,6 +1123,7 @@ async function init() {
 
     const parsed = new URL(activeTab.url);
     state.activeHost = parsed.hostname;
+    state.storeId = await resolveCookieStoreId(chrome.cookies, activeTab.id);
     state.restricted = false;
     dom.restrictedView.classList.add('hidden');
     dom.mainView.classList.remove('hidden');

@@ -31,19 +31,16 @@ ChalaCookiesEdit tiene un único propósito: permitir a usuarios y desarrollador
 
 ---
 
-## 3. Justificación Detallada de Permisos y `<all_urls>` (CWS Privacy Practices)
+## 3. Justificación Detallada de Permisos y `host_permissions` (CWS Privacy Practices)
 
 ### Permiso `cookies`
-- **Justificación:** La funcionalidad central de la extensión depende de la API `chrome.cookies` (`getAll`, `set`, `remove`, `onChanged`) para mostrar las cookies del dominio activo, aplicar ediciones/importaciones solicitadas por el usuario, exportarlas a JSON o Netscape `cookies.txt`, actualizar el contador en el badge y eliminar automáticamente aquellas cookies marcadas como bloqueadas por el usuario.
+- **Justificación:** La funcionalidad central de la extensión depende de la API `chrome.cookies` (`getAll`, `getAllCookieStores`, `set`, `remove`, `onChanged`) para mostrar las cookies del dominio activo (incluyendo cookies particionadas CHIPS y aislamiento por `storeId` en modo incógnito), aplicar ediciones/importaciones solicitadas por el usuario, exportarlas a JSON o Netscape `cookies.txt`, actualizar el contador en el badge y eliminar automáticamente aquellas cookies marcadas como bloqueadas por el usuario.
 
-### `host_permissions`: `<all_urls>`
-- **Justificación:** En Manifest V3, la API `chrome.cookies` exige permisos de host para los dominios cuyas cookies se leen o modifican. Como un editor/inspector de cookies debe funcionar en cualquier sitio web `http://` o `https://` en el que el usuario esté desarrollando o depurando, el permiso `<all_urls>` es técnicamente indispensable. La extensión **no declara `content_scripts`**, **no inyecta código en páginas web** y **no realiza ninguna conexión HTTP/WebSocket saliente**. Además, excluye de forma explícita esquemas internos (`chrome://`, `edge://`, `about:`, `chrome-extension://`).
-
-### Permiso `activeTab`
-- **Justificación:** Necesario para obtener la URL de la pestaña activa cuando el usuario abre el popup o cambia de pestaña (calculando el dominio y actualizando el contador del badge), así como para recargar la pestaña tras aplicar cambios en las cookies mediante el botón de recarga.
+### `host_permissions`: `http://*/*` y `https://*/*`
+- **Justificación:** Siguiendo el principio de mínimo privilegio (en lugar de `<all_urls>` y prescindiendo del permiso redundante `activeTab`), la extensión solicita únicamente los esquemas web `http://*/*` y `https://*/*`. En Manifest V3, la API `chrome.cookies` exige permisos de host para los dominios cuyas cookies se leen o modifican, y estos mismos permisos permiten consultar la URL de la pestaña activa para mostrar las cookies del sitio y actualizar el contador del badge. La extensión **no accede a `file://`**, **no declara `content_scripts`**, **no inyecta código en páginas web** y **no realiza ninguna conexión HTTP/WebSocket saliente**. Además, excluye de forma explícita esquemas internos (`chrome://`, `edge://`, `about:`, `chrome-extension://`).
 
 ### Permiso `storage`
-- **Justificación:** Necesario para almacenar localmente en `chrome.storage.local` las reglas de bloqueo de cookies (`dominio + nombre`) configuradas por el usuario. No se utiliza `storage.sync` ni servidores externos.
+- **Justificación:** Necesario para almacenar localmente en `chrome.storage.local` las reglas de bloqueo de cookies (`storeId + dominio + nombre`) configuradas por el usuario. No se utiliza `storage.sync` ni servidores externos.
 
 ### Uso de código remoto (Remote Code)
 - **No utiliza código remoto.** Todo el código JavaScript reside empaquetado dentro de `src/` sin `eval()`, sin scripts externos y sin dependencias de terceros.

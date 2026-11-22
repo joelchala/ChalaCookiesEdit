@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "short_name": "ChalaCookiesEdit",
+  "short_name": "ChalaCookies",
   "version": "1.0.0",
   "description": "__MSG_extDescription__",
   "default_locale": "es",
@@ -10,11 +10,11 @@
   "minimum_chrome_version": "109",
   "permissions": [
     "cookies",
-    "activeTab",
     "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js",

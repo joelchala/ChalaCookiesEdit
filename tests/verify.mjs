@@ -15,13 +15,19 @@ import {
   buildCookieRemovalDetails,
   buildCookieSetDetails,
   buildCookieUrl,
+  classifyImportedCookies,
   detectAndParseCookies,
   exportCookiesToJson,
   exportCookiesToNetscape,
+  getBlockedCookieKey,
   getCookiesForTabUrl,
+  isPartitionedCookie,
   isRestrictedUrl,
+  isValidCookieDomain,
+  isValidHostname,
   parseCookiesFromJson,
-  parseCookiesFromNetscape
+  parseCookiesFromNetscape,
+  resolveCookieStoreId
 } from '../src/lib/cookie-formats.js';
 import {
   formatJwtRelativeTime,
@@ -29,6 +35,8 @@ import {
   isLikelyJwt
 } from '../src/lib/jwt-inspector.js';
 import {
+  BADGE_DEBOUNCE_MS,
+  createBadgeScheduler,
   handleCookieChanged,
   handleMessage,
   loadBlockedCookies,
@@ -164,9 +172,15 @@ await runTest('4. manifest.json MV3 e iconos PNG válidos con dimensiones exacta
 
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.version, version);
+  assert.ok(
+    typeof manifest.short_name === 'string' && manifest.short_name.length > 0 && manifest.short_name.length <= 12,
+    `manifest.short_name debe tener entre 1 y 12 caracteres (actual: "${manifest.short_name}", longitud: ${manifest.short_name?.length})`
+  );
   assert.equal(manifest.default_locale, 'es');
-  assert.deepEqual(manifest.permissions, ['cookies', 'activeTab', 'storage']);
-  assert.deepEqual(manifest.host_permissions, ['<all_urls>']);
+  assert.deepEqual(manifest.permissions, ['cookies', 'storage']);
+  assert.equal(manifest.permissions.includes('activeTab'), false);
+  assert.deepEqual(manifest.host_permissions, ['http://*/*', 'https://*/*']);
+  assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
   assert.equal(manifest.background?.service_worker, 'background.js');
   assert.equal(manifest.background?.type, 'module');
 
@@ -225,7 +239,8 @@ await runTest('6. Fichas de tienda, activos y PRIVACY.md contienen justificacion
 
   for (const doc of [edgeDoc, cwsDoc, privacyDoc]) {
     assert.ok(doc.includes('cookies'), 'Falta referencia a permiso cookies');
-    assert.ok(doc.includes('<all_urls>'), 'Falta justificación de <all_urls>');
+    assert.ok(doc.includes('http://*/*'), 'Falta justificación de http://*/*');
+    assert.ok(doc.includes('https://*/*'), 'Falta justificación de https://*/*');
   }
 
   for (const dim of ['1280x800', '440x280', '1400x560', '300x300']) {
@@ -564,6 +579,235 @@ await runTest('11. createZipBuffer genera estructura PKZIP estándar e inflado e
     assert.ok(inflated.equals(sampleEntries[i].data));
 
     cursor += 46 + nameLen + extraLen + commentLen;
+  }
+});
+
+// 12. S1 y S2: Validación estricta de dominio y protección contra Session Fixation
+await runTest('12. S1/S2: rechazo de dominios maliciosos (a.com@evil.com) y filtrado cross-domain', () => {
+  assert.equal(isValidHostname('example.com'), true);
+  assert.equal(isValidHostname('sub-1.api.example.com'), true);
+  assert.equal(isValidCookieDomain('.example.com'), true);
+
+  for (const bad of [
+    'a.com@evil.com',
+    'user:pass@evil.com',
+    'example.com:8080',
+    'example.com/path',
+    'example.com?x=1',
+    'example.com#hash',
+    'exa mple.com',
+    '-bad.example.com',
+    'bad-.example.com',
+    'example..com'
+  ]) {
+    assert.equal(isValidCookieDomain(bad), false, `Debió rechazar dominio: "${bad}"`);
+    assert.throws(() => buildCookieUrl({ domain: bad, path: '/' }), /Dominio de cookie inválido/);
+    assert.throws(
+      () => buildCookieSetDetails({ name: 'sid', value: '1', domain: bad }, { tabUrl: 'https://a.com/' }),
+      /Dominio de cookie inválido/
+    );
+  }
+  assert.equal(isValidCookieDomain(''), false);
+  assert.throws(() => buildCookieUrl({ domain: '', path: '/' }), /dominio válido/);
+
+  // Ruta con query/fragmento embebido también se rechaza
+  assert.throws(() => buildCookieUrl({ domain: 'example.com', path: '/a?b=1' }), /Ruta de cookie inválida/);
+
+  // Clasificación de importación (S1): solo el host activo y sus subdominios entran por defecto
+  const batch = [
+    { name: 'ok_exact', value: '1', domain: 'app.example.com' },
+    { name: 'ok_sub', value: '1', domain: '.sub.app.example.com' },
+    { name: 'ok_empty', value: '1', domain: '' },
+    { name: 'ext_parent', value: '1', domain: '.example.com' },
+    { name: 'ext_other', value: '1', domain: 'mibanco.com' },
+    { name: 'bad_inj', value: '1', domain: 'app.example.com@evil.com' }
+  ];
+  const classified = classifyImportedCookies(batch, 'app.example.com');
+  assert.deepEqual(
+    classified.allowed.map((c) => c.name),
+    ['ok_exact', 'ok_sub', 'ok_empty']
+  );
+  assert.deepEqual(
+    classified.external.map((c) => c.name),
+    ['ext_parent', 'ext_other']
+  );
+  assert.deepEqual(classified.externalDomains, ['example.com', 'mibanco.com']);
+  assert.deepEqual(
+    classified.invalid.map((c) => c.name),
+    ['bad_inj']
+  );
+});
+
+// 13. B1 y B2: Cookies particionadas (CHIPS) y aislamiento de storeId (modo incógnito)
+await runTest('13. B1/B2: soporte de partitionKey (CHIPS) y aislamiento por storeId en incógnito', async () => {
+  const mockCookiesApi = {
+    calls: [],
+    async getAllCookieStores() {
+      return [
+        { id: '0', tabIds: [1, 2] },
+        { id: '1', tabIds: [99] }
+      ];
+    },
+    async getAll(query) {
+      this.calls.push(query);
+      if (query.url) {
+        return [
+          {
+            name: 'embed_state',
+            value: 'unpartitioned',
+            domain: '.widget.example.com',
+            path: '/',
+            secure: true,
+            storeId: query.storeId
+          },
+          {
+            name: 'embed_state',
+            value: 'partitioned_val',
+            domain: '.widget.example.com',
+            path: '/',
+            secure: true,
+            storeId: query.storeId,
+            partitionKey: { topLevelSite: 'https://news.site', hasCrossSiteAncestor: true }
+          }
+        ];
+      }
+      return [];
+    }
+  };
+
+  const incognitoStore = await resolveCookieStoreId(mockCookiesApi, 99);
+  assert.equal(incognitoStore, '1');
+
+  const list = await getCookiesForTabUrl(mockCookiesApi, 'https://widget.example.com/', {
+    storeId: incognitoStore
+  });
+  // Mismo nombre/dominio pero distinta partitionKey -> ambas se conservan sin colisionar
+  assert.equal(list.length, 2);
+  assert.ok(mockCookiesApi.calls.every((q) => q.storeId === '1' && 'partitionKey' in q));
+  assert.equal(isPartitionedCookie(list[0]), false);
+  assert.equal(isPartitionedCookie(list[1]), true);
+
+  // Set y remove preservan partitionKey y el storeId de la pestaña
+  const setDetails = buildCookieSetDetails(
+    {
+      name: '__Host-chips',
+      value: 'v',
+      domain: 'widget.example.com',
+      path: '/',
+      secure: false,
+      storeId: '0',
+      partitionKey: { topLevelSite: 'https://news.site' }
+    },
+    { tabUrl: 'https://widget.example.com/', storeId: '1' }
+  );
+  assert.equal(setDetails.storeId, '1', 'options.storeId debe prevalecer sobre el storeId del payload');
+  assert.equal(setDetails.secure, true, 'CHIPS requiere Secure=true');
+  assert.deepEqual(setDetails.partitionKey, { topLevelSite: 'https://news.site' });
+
+  const rmDetails = buildCookieRemovalDetails(list[1], 'https:');
+  assert.equal(rmDetails.storeId, '1');
+  assert.deepEqual(rmDetails.partitionKey, {
+    topLevelSite: 'https://news.site',
+    hasCrossSiteAncestor: true
+  });
+
+  // Clave de bloqueo aislada por store: ${storeId}:${domain}:${name}
+  assert.equal(getBlockedCookieKey('.Example.com', 'tracker', '1'), '1:example.com:tracker');
+  assert.equal(getBlockedCookieKey('example.com', 'tracker'), '0:example.com:tracker');
+});
+
+// 14. P1 y S4: Debounce/filtrado del badge en background.js y endurecimiento de build.yml
+await runTest('14. P1/S4: filtrado por host + debounce 400ms del badge y pines SHA en GitHub Actions', async () => {
+  assert.equal(BADGE_DEBOUNCE_MS, 400);
+
+  let scheduledFn = null;
+  let scheduledDelay = null;
+  let clearedCount = 0;
+  let badgeRefreshCount = 0;
+
+  const mockChrome = {
+    cookies: {
+      async getAllCookieStores() {
+        return [{ id: '0', tabIds: [7] }];
+      },
+      async getAll() {
+        return [{ name: 'a', value: '1', domain: 'example.com', path: '/' }];
+      }
+    },
+    tabs: {
+      async query() {
+        return [{ id: 7, url: 'https://app.example.com/panel' }];
+      }
+    },
+    action: {
+      async setBadgeText() {
+        badgeRefreshCount += 1;
+      },
+      async setBadgeBackgroundColor() {},
+      async setBadgeTextColor() {}
+    }
+  };
+
+  const scheduler = createBadgeScheduler(mockChrome, {
+    setTimer(fn, ms) {
+      scheduledFn = fn;
+      scheduledDelay = ms;
+      return 123;
+    },
+    clearTimer() {
+      clearedCount += 1;
+    }
+  });
+
+  await scheduler.updateTab(7, 'https://app.example.com/panel');
+  assert.equal(badgeRefreshCount, 1);
+
+  // Cambio en un dominio ajeno -> ignorado sin programar timer
+  await handleCookieChanged(
+    mockChrome,
+    { removed: false, cookie: { name: 'ad', domain: '.doubleclick.net', storeId: '0' } },
+    { list: [] },
+    scheduler
+  );
+  assert.equal(scheduledFn, null);
+
+  // Cambio en otro cookie store (incógnito) -> ignorado
+  await handleCookieChanged(
+    mockChrome,
+    { removed: false, cookie: { name: 'sid', domain: 'app.example.com', storeId: '1' } },
+    { list: [] },
+    scheduler
+  );
+  assert.equal(scheduledFn, null);
+
+  // Dos cambios seguidos en el dominio activo -> debounce de 400 ms (cancela el primero)
+  await handleCookieChanged(
+    mockChrome,
+    { removed: false, cookie: { name: 'sid', domain: '.example.com', storeId: '0' } },
+    { list: [] },
+    scheduler
+  );
+  await handleCookieChanged(
+    mockChrome,
+    { removed: false, cookie: { name: 'sid2', domain: 'app.example.com', storeId: '0' } },
+    { list: [] },
+    scheduler
+  );
+  assert.equal(scheduledDelay, 400);
+  assert.equal(clearedCount, 1);
+  assert.equal(badgeRefreshCount, 1);
+
+  scheduledFn();
+  await scheduler.flush();
+  assert.equal(badgeRefreshCount, 3);
+
+  // S4: Verificación estática del workflow de GitHub Actions
+  const wf = fs.readFileSync(path.join(ROOT_DIR, '.github', 'workflows', 'build.yml'), 'utf8');
+  assert.match(wf, /^permissions:\s*\r?\n\s+contents:\s*read\b/m);
+  const usesLines = [...wf.matchAll(/^\s*-?\s*uses:\s*([^\s#]+)/gm)].map((m) => m[1]);
+  assert.ok(usesLines.length >= 4);
+  for (const ref of usesLines) {
+    assert.match(ref, /^[^@]+@[0-9a-f]{40}$/, `Action no fijada a SHA completo: ${ref}`);
   }
 });
 

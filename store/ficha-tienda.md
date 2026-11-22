@@ -53,7 +53,6 @@ Built with the **"Escudo Cibernético"** dark slate interface and zero external 
 
 ## Justificación de Permisos / Permissions Justification (Edge Review Notes)
 
-- **`cookies`:** Requerido para listar, crear, editar, exportar, importar y eliminar cookies del dominio de la pestaña activa, y para escuchar `chrome.cookies.onChanged` y eliminar cookies bloqueadas por el usuario.
-- **`activeTab`:** Requerido para leer la URL de la pestaña activa cuando el usuario abre la extensión o actualiza el badge, y para recargar la pestaña tras modificar cookies.
-- **`storage`:** Requerido para persistir localmente en `chrome.storage.local` la lista de cookies bloqueadas (`dominio + nombre`).
-- **`<all_urls>` (`host_permissions`):** Requerido por Chromium/Edge para que la API `chrome.cookies` pueda inspeccionar y modificar cookies en cualquier sitio `http://` o `https://` que el usuario esté visitando. La extensión no inyecta scripts de contenido ni realiza peticiones de red externas.
+- **`cookies`:** Requerido para listar, crear, editar, exportar, importar y eliminar cookies (incluyendo cookies particionadas CHIPS y aislamiento de store en modo incógnito) del dominio de la pestaña activa, y para escuchar `chrome.cookies.onChanged` y eliminar cookies bloqueadas por el usuario.
+- **`storage`:** Requerido para persistir localmente en `chrome.storage.local` la lista de cookies bloqueadas (`storeId + dominio + nombre`).
+- **`http://*/*`, `https://*/*` (`host_permissions`):** Principio de mínimo privilegio (en lugar de `<all_urls>` y sin el permiso redundante `activeTab`). Requerido por Chromium/Edge para que la API `chrome.cookies` pueda inspeccionar y modificar cookies únicamente en sitios web `http://` o `https://` que el usuario visite, excluyendo `file://` y esquemas internos. La extensión no inyecta scripts de contenido ni realiza peticiones de red externas.

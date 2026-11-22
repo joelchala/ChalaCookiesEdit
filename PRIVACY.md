@@ -24,10 +24,9 @@ Estos datos permanecen en tu dispositivo y se eliminan por completo al desinstal
 
 | Permiso / Host | Uso técnico exacto | Alcance y privacidad |
 | :--- | :--- | :--- |
-| `cookies` | Leer, crear, editar, duplicar, exportar, importar y eliminar cookies mediante `chrome.cookies`, además de escuchar `chrome.cookies.onChanged` para borrar cookies marcadas como bloqueadas. | Solo se ejecuta sobre el dominio solicitado por el usuario o sobre cookies explícitamente bloqueadas en `chrome.storage.local`. |
-| `activeTab` | Consultar la URL de la pestaña activa al abrir el popup o al actualizar el contador del badge, y permitir recargar la pestaña tras modificar cookies. | Nunca rastrea ni envía URLs visitadas fuera del dispositivo. |
-| `storage` | Persistir localmente las reglas de bloqueo de cookies (`dominio + nombre`) en `chrome.storage.local`. | Almacenamiento estrictamente local sin sincronización remota. |
-| `<all_urls>` (`host_permissions`) | Necesario en Chromium/Edge MV3 para que `chrome.cookies` pueda leer, modificar y bloquear cookies de cualquier dominio web (`http://` / `https://`) que el usuario decida inspeccionar o gestionar. | La extensión no inyecta scripts en páginas web (`content_scripts` no declarados) ni realiza peticiones HTTP salientes. |
+| `cookies` | Leer, crear, editar, duplicar, exportar, importar y eliminar cookies (incluyendo cookies particionadas CHIPS y aislamiento por `storeId` en modo incógnito) mediante `chrome.cookies`, además de escuchar `chrome.cookies.onChanged` para borrar cookies marcadas como bloqueadas. | Solo se ejecuta sobre el dominio solicitado por el usuario o sobre cookies explícitamente bloqueadas en `chrome.storage.local`. |
+| `storage` | Persistir localmente las reglas de bloqueo de cookies (`storeId + dominio + nombre`) en `chrome.storage.local`. | Almacenamiento estrictamente local sin sincronización remota. |
+| `http://*/*`, `https://*/*` (`host_permissions`) | Principio de mínimo privilegio (en lugar de `<all_urls>` y sin requerir `activeTab`): necesario en Chromium/Edge MV3 para que `chrome.cookies` pueda leer, modificar y bloquear cookies de cualquier sitio web `http://` o `https://` que el usuario decida inspeccionar, y para conocer la URL de la pestaña activa al actualizar el badge. | Excluye esquemas no web (`file://`, `ftp://`, `chrome://`, `edge://`, `about:`). La extensión no declara `content_scripts` ni realiza peticiones HTTP salientes. |
 
 ---
 
@@ -50,7 +49,6 @@ This data never leaves your device and is permanently removed when you unblock r
 
 | Permission / Host | Exact Technical Purpose | Privacy Scope |
 | :--- | :--- | :--- |
-| `cookies` | Read, create, edit, duplicate, export, import, and remove cookies via `chrome.cookies`, and listen to `chrome.cookies.onChanged` to auto-delete user-blocked cookies. | Operates strictly on the active domain inspected by the user or on explicit user-configured blocking rules. |
-| `activeTab` | Identify the active tab URL when opening the popup or refreshing the badge counter, and reload the current tab on user request. | URLs are never logged or transmitted outside the browser. |
-| `storage` | Persist user-configured cookie blocklists (`domain + name`) in `chrome.storage.local`. | Strictly local device storage. |
-| `<all_urls>` (`host_permissions`) | Required by Chromium/Edge Manifest V3 so `chrome.cookies` can access, edit, and enforce block rules across any `http://` or `https://` site the user chooses to inspect. | No `content_scripts` are injected into web pages and no outbound network requests are made. |
+| `cookies` | Read, create, edit, duplicate, export, import, and remove cookies (including CHIPS partitioned cookies and incognito `storeId` isolation) via `chrome.cookies`, and listen to `chrome.cookies.onChanged` to auto-delete user-blocked cookies. | Operates strictly on the active domain inspected by the user or on explicit user-configured blocking rules. |
+| `storage` | Persist user-configured cookie blocklists (`storeId + domain + name`) in `chrome.storage.local`. | Strictly local device storage. |
+| `http://*/*`, `https://*/*` (`host_permissions`) | Least-privilege scope (replacing `<all_urls>` and removing the redundant `activeTab` permission): required by Chromium/Edge Manifest V3 so `chrome.cookies` can access, edit, and enforce block rules across any `http://` or `https://` site the user chooses to inspect, and to read the active tab URL for the badge counter. | Excludes non-web schemes (`file://`, `ftp://`, `chrome://`, `edge://`, `about:`). No `content_scripts` are injected and no outbound network requests are made. |

@@ -298,5 +298,41 @@
   "footerSupport": {
     "message": "Apoyar (PayPal)",
     "description": "Enlace de apoyo en footer"
+  },
+  "badgePartitioned": {
+    "message": "Partitioned",
+    "description": "Insignia cookie particionada (CHIPS)"
+  },
+  "labelPartition": {
+    "message": "Partición (CHIPS)",
+    "description": "Etiqueta de clave de partición"
+  },
+  "importExternalWarnTitle": {
+    "message": "Advertencia de seguridad: dominios externos detectados",
+    "description": "Título del aviso de seguridad al importar cookies externas"
+  },
+  "importExternalWarnDesc": {
+    "message": "Se detectaron cookies para dominios externos al sitio activo",
+    "description": "Descripción del aviso de dominios externos"
+  },
+  "btnImportOnlyCurrent": {
+    "message": "Solo dominio actual (recomendado)",
+    "description": "Botón importar solo cookies del dominio activo"
+  },
+  "btnImportIncludeExternal": {
+    "message": "Confirmar e incluir externos",
+    "description": "Botón confirmar escritura de cookies en dominios externos"
+  },
+  "importInvalidDomainError": {
+    "message": "Todas las cookies fueron rechazadas por dominio inválido.",
+    "description": "Error cuando todos los dominios importados son inválidos"
+  },
+  "importFileTooLarge": {
+    "message": "El archivo supera el límite de 2 MB.",
+    "description": "Error de tamaño máximo de archivo"
+  },
+  "labelSkipped": {
+    "message": "omitidas",
+    "description": "Etiqueta de cookies omitidas al importar"
   }
 }

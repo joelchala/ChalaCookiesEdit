@@ -1,24 +1,29 @@
 # Especificación de Activos Gráficos para Tiendas — ChalaCookiesEdit
 
-Paleta oficial **"Escudo Cibernético" (Suite Chala)**:
-- Fondo principal: `#0F172A`
-- Superficies / Tarjetas: `#1E293B`
-- Bordes: `#334155`
-- Texto principal: `#F1F5F9` / Secundario: `#94A3B8`
-- Acento primario (Esmeralda): `#10B981`
-- Acento secundario (Cian): `#06B6D4`
-- Alertas / Bloqueado: `#EF4444`
+Paleta oficial **Clásico Claro (Naranja y Negro — Suite Chala)**:
+- Fondo principal: `#FAF7F2`
+- Superficies / Tarjetas: `#FFFFFF`
+- Bordes: `#E4DDD3`
+- Texto principal: `#111111` / Secundario: `#57534E`
+- Acento primario (Naranja): `#EA580C`
+- Acento secundario (Negro): `#18181B`
+- Alertas / Bloqueado: `#DC2626`
 
 ---
 
-## Medidas Requeridas
+## Medidas Requeridas y Archivos Generados
 
 | Archivo / Tipo | Dimensiones (px) | Formato | Tienda | Estado |
 | :--- | :--- | :--- | :--- | :--- |
-| `store/logo-300x300.png` | `300x300` | PNG (RGBA, sin pérdida) | Microsoft Edge Add-ons (Logo de tienda) | Generado automáticamente con `npm run icons` |
-| Capturas de pantalla | `1280x800` | PNG o JPEG (24-bit sin alfa) | Chrome Web Store & Edge Add-ons (mínimo 2, recomendado 4) | Preparar capturas limpias del popup sobre un sitio web de prueba |
-| Mosaico promocional pequeño | `440x280` | PNG o JPEG (sin alfa) | Chrome Web Store | Banner compacto Escudo Cibernético + logotipo |
-| Mosaico promocional grande / Marquesina | `1400x560` | PNG o JPEG (sin alfa) | Chrome Web Store | Banner hero con resumen visual de CRUD + Inspector JWT + Netscape |
+| `store/logo-300x300.png` | `300x300` | PNG | Microsoft Edge Add-ons (Logotipo de extensión) | Generado (`npm run icons`) |
+| `store/promo-440x280.png` | `440x280` | PNG | Microsoft Edge Add-ons & Chrome Web Store (Pequeña ficha promocional) | Generado |
+| `store/promo-1400x560.png` | `1400x560` | PNG | Microsoft Edge Add-ons & Chrome Web Store (Gran baldosa promocional) | Generado |
+| `store/screenshot-1-1280x800.png` | `1280x800` | PNG | Chrome Web Store & Edge Add-ons (Captura 1: Vista principal + Inspector JWT + CHIPS) | Generado |
+| `store/screenshot-2-1280x800.png` | `1280x800` | PNG | Chrome Web Store & Edge Add-ons (Captura 2: Editor MV3 + Importar/Exportar seguro) | Generado |
+| `store/screenshot-3-1280x800.png` | `1280x800` | PNG | Chrome Web Store & Edge Add-ons (Captura 3: Bloqueo automático en tiempo real) | Generado |
+| `store/screenshot-4-1280x800.png` | `1280x800` | PNG | Chrome Web Store & Edge Add-ons (Captura 4: Exportación JSON y Netscape cookies.txt) | Generado |
+| `store/screenshot-5-1280x800.png` | `1280x800` | PNG | Chrome Web Store & Edge Add-ons (Captura 5: Cookies Particionadas CHIPS y editor JWT en vivo) | Generado |
+| `store/screenshot-6-1280x800.png` | `1280x800` | PNG | Chrome Web Store & Edge Add-ons (Captura 6: Avisos limpios en URLs internas y borrado seguro) | Generado |
 
 ---
 

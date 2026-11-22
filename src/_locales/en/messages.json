@@ -298,5 +298,41 @@
   "footerSupport": {
     "message": "Support (PayPal)",
     "description": "Footer support link"
+  },
+  "badgePartitioned": {
+    "message": "Partitioned",
+    "description": "Partitioned cookie (CHIPS) badge"
+  },
+  "labelPartition": {
+    "message": "Partition (CHIPS)",
+    "description": "Partition key label"
+  },
+  "importExternalWarnTitle": {
+    "message": "Security warning: external domains detected",
+    "description": "Security warning title when importing external cookies"
+  },
+  "importExternalWarnDesc": {
+    "message": "Cookies targeting domains outside the active site were detected",
+    "description": "External domains warning description"
+  },
+  "btnImportOnlyCurrent": {
+    "message": "Active domain only (recommended)",
+    "description": "Import only cookies for the active domain"
+  },
+  "btnImportIncludeExternal": {
+    "message": "Confirm & include external",
+    "description": "Confirm writing cookies to external domains"
+  },
+  "importInvalidDomainError": {
+    "message": "All cookies were rejected due to an invalid domain.",
+    "description": "Error when all imported domains are invalid"
+  },
+  "importFileTooLarge": {
+    "message": "File exceeds the 2 MB limit.",
+    "description": "Maximum file size error"
+  },
+  "labelSkipped": {
+    "message": "skipped",
+    "description": "Skipped cookies label on import"
   }
 }

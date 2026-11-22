@@ -1,7 +1,7 @@
 /**
  * @fileoverview Generador nativo de iconos PNG y SVG para ChalaCookiesEdit (Suite Chala).
- * Utiliza exclusivamente APIs nativas de Node.js (node:fs, node:path, node:zlib, node:url)
- * sin dependencias externas.
+ * Renderiza el emblema de doble galleta dorada con chispas de chocolate, mordida y migas
+ * usando exclusivamente APIs nativas de Node.js (node:fs, node:path, node:zlib, node:url).
  */
 
 import fs from 'node:fs';
@@ -98,98 +98,200 @@ export function encodePng(width, height, rgbaBuffer) {
   ]);
 }
 
+function clamp(v, min, max) {
+  return v < min ? min : v > max ? max : v;
+}
+
+function smoothstep(edge0, edge1, x) {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+const BACK_COOKIE = { cx: 0.34, cy: 0.45, r: 0.295 };
+const FRONT_COOKIE = { cx: 0.625, cy: 0.545, r: 0.32 };
+
+const FRONT_BITES = [
+  { cx: 0.835, cy: 0.33, r: 0.135 },
+  { cx: 0.885, cy: 0.415, r: 0.125 },
+  { cx: 0.935, cy: 0.505, r: 0.138 }
+];
+
+const BACK_CHIPS = [
+  { x: 0.28, y: 0.255, r: 0.031 },
+  { x: 0.415, y: 0.24, r: 0.033 },
+  { x: 0.215, y: 0.33, r: 0.026 },
+  { x: 0.365, y: 0.375, r: 0.042 },
+  { x: 0.185, y: 0.465, r: 0.032 },
+  { x: 0.295, y: 0.495, r: 0.026 },
+  { x: 0.27, y: 0.615, r: 0.039 }
+];
+
+const FRONT_CHIPS = [
+  { x: 0.60, y: 0.365, r: 0.044 },
+  { x: 0.465, y: 0.475, r: 0.035 },
+  { x: 0.65, y: 0.53, r: 0.05 },
+  { x: 0.515, y: 0.615, r: 0.043 },
+  { x: 0.67, y: 0.71, r: 0.035 },
+  { x: 0.805, y: 0.645, r: 0.041 }
+];
+
+const CRUMBS = [
+  { cx: 0.81, cy: 0.34, rx: 0.048, ry: 0.043, rot: -0.25 },
+  { cx: 0.908, cy: 0.425, rx: 0.028, ry: 0.025, rot: 0.35 },
+  { cx: 0.91, cy: 0.535, rx: 0.044, ry: 0.034, rot: 0.15 }
+];
+
 /**
- * Evalúa la distancia firmada aproximada al contorno del escudo cibernético.
- * Valores <= 0 están dentro del escudo.
- * @param {number} x Normalizado [0, 1]
- * @param {number} y Normalizado [0, 1]
- * @returns {number}
+ * Calcula el color 3D de la masa horneada y sus chispas de chocolate.
+ * @param {number} x
+ * @param {number} y
+ * @param {{ cx: number, cy: number, r: number }} cookie
+ * @param {Array<{ x: number, y: number, r: number }>} chips
+ * @param {number} edgeDepth Distancia mínima al borde exterior/mordida
+ * @returns {[number, number, number]}
  */
-function shieldSignedDistance(x, y) {
-  const dx = Math.abs(x - 0.5);
-  const topY = 0.08 + 0.06 * Math.pow(dx / 0.39, 1.5);
-  if (y < topY) {
-    return topY - y;
+function shadeCookieAndChips(x, y, cookie, chips, edgeDepth) {
+  const dx = (x - cookie.cx) / cookie.r;
+  const dy = (y - cookie.cy) / cookie.r;
+  const distNorm = Math.hypot(dx, dy);
+
+  // Iluminación 3D cálida desde arriba-derecha + borde horneado naranja/tostado
+  const light = clamp(0.58 - dx * 0.18 - dy * 0.28, 0, 1);
+  const rimToast = 1 - smoothstep(0.0, 0.055, edgeDepth);
+  const centerCrease = Math.exp(-Math.pow(distNorm * 3.1, 2)) * 0.08;
+
+  let r = 224 + light * 24 - rimToast * 44 - centerCrease * 35;
+  let g = 160 + light * 28 - rimToast * 52 - centerCrease * 32;
+  let b = 76 + light * 18 - rimToast * 34 - centerCrease * 20;
+
+  // Chispas de chocolate con volumen 3D y sombra en la masa
+  for (const chip of chips) {
+    const cdx = x - chip.x;
+    const cdy = y - chip.y;
+    const cDist = Math.hypot(cdx, cdy);
+
+    if (cDist <= chip.r) {
+      const nx = cdx / chip.r;
+      const ny = cdy / chip.r;
+      const chipRim = smoothstep(0.72, 1.0, cDist / chip.r);
+      const spec = Math.max(0, -(nx * 0.55 + ny * 0.65));
+      const cr = 96 + spec * 42 - chipRim * 34;
+      const cg = 54 + spec * 26 - chipRim * 22;
+      const cb = 36 + spec * 18 - chipRim * 15;
+      return [
+        Math.round(clamp(cr, 0, 255)),
+        Math.round(clamp(cg, 0, 255)),
+        Math.round(clamp(cb, 0, 255))
+      ];
+    }
+
+    // Sombra suave alrededor de la chispa
+    const shadowDist = Math.hypot(cdx - 0.004, cdy - 0.006);
+    if (shadowDist < chip.r * 1.24) {
+      const s = 1 - smoothstep(chip.r, chip.r * 1.24, shadowDist);
+      r -= s * 28;
+      g -= s * 26;
+      b -= s * 18;
+    }
   }
 
-  let halfWidth;
-  if (y <= 0.48) {
-    halfWidth = 0.39 - (y - 0.08) * 0.05;
-  } else {
-    const t = Math.min(1, (y - 0.48) / 0.44);
-    halfWidth = 0.37 * Math.pow(1 - t, 0.72);
-  }
-
-  if (y > 0.92) {
-    return Math.hypot(dx, y - 0.92);
-  }
-
-  return dx - halfWidth;
+  return [
+    Math.round(clamp(r, 0, 255)),
+    Math.round(clamp(g, 0, 255)),
+    Math.round(clamp(b, 0, 255))
+  ];
 }
 
 /**
- * Calcula el color RGBA [0..255] de un subpíxel del emblema Escudo + Cookie.
+ * Comprueba si el punto cae dentro de la galleta delantera (descontando la mordida).
+ * Devuelve la profundidad al borde (> 0 si está dentro, <= 0 si está fuera).
+ * @param {number} x
+ * @param {number} y
+ * @returns {number}
+ */
+function frontCookieDepth(x, y) {
+  const outerDepth = FRONT_COOKIE.r - Math.hypot(x - FRONT_COOKIE.cx, y - FRONT_COOKIE.cy);
+  if (outerDepth <= 0) return -1;
+
+  let minBiteMargin = Infinity;
+  for (const bite of FRONT_BITES) {
+    const biteMargin = Math.hypot(x - bite.cx, y - bite.cy) - bite.r;
+    if (biteMargin <= 0) return -1;
+    if (biteMargin < minBiteMargin) minBiteMargin = biteMargin;
+  }
+
+  return Math.min(outerDepth, minBiteMargin);
+}
+
+/**
+ * Evalúa si el punto cae dentro de alguna de las 3 migas de la mordida.
+ * @param {number} x
+ * @param {number} y
+ * @returns {[number, number, number] | null}
+ */
+function sampleCrumb(x, y) {
+  for (const crumb of CRUMBS) {
+    const dx = x - crumb.cx;
+    const dy = y - crumb.cy;
+    const cos = Math.cos(crumb.rot);
+    const sin = Math.sin(crumb.rot);
+    const rx = (dx * cos + dy * sin) / crumb.rx;
+    const ry = (-dx * sin + dy * cos) / crumb.ry;
+    const angle = Math.atan2(ry, rx);
+    const radiusMod = 1 + 0.08 * Math.sin(angle * 3) + 0.05 * Math.cos(angle * 5);
+    const d = Math.hypot(rx, ry) / radiusMod;
+
+    if (d <= 1) {
+      const edge = 1 - d;
+      const rim = 1 - smoothstep(0, 0.28, edge);
+      const light = clamp(0.55 - rx * 0.22 - ry * 0.25, 0, 1);
+      const r = Math.round(clamp(224 + light * 22 - rim * 45, 0, 255));
+      const g = Math.round(clamp(162 + light * 24 - rim * 50, 0, 255));
+      const b = Math.round(clamp(78 + light * 16 - rim * 34, 0, 255));
+      return [r, g, b];
+    }
+  }
+  return null;
+}
+
+/**
+ * Calcula el color RGBA [0..255] de un subpíxel del emblema de doble galleta.
  * @param {number} x
  * @param {number} y
  * @returns {[number, number, number, number]}
  */
 function sampleEmblemPixel(x, y) {
-  const distShield = shieldSignedDistance(x, y);
-  if (distShield > 0) {
-    return [0, 0, 0, 0];
+  // 1. Migas de la mordida
+  const crumbColor = sampleCrumb(x, y);
+  if (crumbColor) {
+    return [crumbColor[0], crumbColor[1], crumbColor[2], 255];
   }
 
-  // Borde exterior esmeralda (#10B981)
-  if (distShield > -0.052) {
-    return [16, 185, 129, 255];
+  // 2. Galleta delantera con mordida
+  const frontDepth = frontCookieDepth(x, y);
+  if (frontDepth > 0) {
+    const [r, g, b] = shadeCookieAndChips(x, y, FRONT_COOKIE, FRONT_CHIPS, frontDepth);
+    return [r, g, b, 255];
   }
 
-  // Borde sutil interior cian (#06B6D4)
-  if (distShield > -0.072) {
-    return [6, 182, 212, 230];
-  }
+  // 3. Galleta trasera (completa) con sombra proyectada por la galleta delantera
+  const backDepth = BACK_COOKIE.r - Math.hypot(x - BACK_COOKIE.cx, y - BACK_COOKIE.cy);
+  if (backDepth > 0) {
+    let [r, g, b] = shadeCookieAndChips(x, y, BACK_COOKIE, BACK_CHIPS, backDepth);
 
-  // Fondo del escudo: #0F172A con gradiente sutil hacia #1E293B en el centro
-  const centerDist = Math.hypot(x - 0.5, y - 0.48);
-  const glow = Math.max(0, 1 - centerDist / 0.45);
-  let r = Math.round(15 + glow * 15);
-  let g = Math.round(23 + glow * 18);
-  let b = Math.round(42 + glow * 26);
-
-  // Cookie central con mordida superior derecha
-  const cx = 0.5;
-  const cy = 0.52;
-  const cookieRadius = 0.21;
-  const biteDist = Math.hypot(x - 0.65, y - 0.39);
-  const cookieDist = Math.hypot(x - cx, y - cy);
-
-  if (cookieDist <= cookieRadius && biteDist > 0.082) {
-    if (cookieDist >= cookieRadius - 0.032) {
-      // Aro cian de la cookie (#06B6D4)
-      return [6, 182, 212, 255];
+    // Sombra proyectada de la galleta delantera sobre la trasera
+    const distToFrontCenter = Math.hypot(x - (FRONT_COOKIE.cx - 0.025), y - (FRONT_COOKIE.cy - 0.01));
+    if (distToFrontCenter < FRONT_COOKIE.r + 0.055) {
+      const shadowStrength = 1 - smoothstep(FRONT_COOKIE.r - 0.02, FRONT_COOKIE.r + 0.055, distToFrontCenter);
+      r = Math.round(r * (1 - shadowStrength * 0.28));
+      g = Math.round(g * (1 - shadowStrength * 0.32));
+      b = Math.round(b * (1 - shadowStrength * 0.36));
     }
 
-    // Cuerpo cookie (#1E293B)
-    r = 30;
-    g = 41;
-    b = 59;
-
-    // Chispas de datos esmeralda y cian
-    const chips = [
-      { x: 0.43, y: 0.46, rad: 0.034, color: [16, 185, 129] },
-      { x: 0.55, y: 0.56, rad: 0.036, color: [16, 185, 129] },
-      { x: 0.45, y: 0.60, rad: 0.028, color: [6, 182, 212] },
-      { x: 0.54, y: 0.45, rad: 0.024, color: [241, 245, 249] }
-    ];
-
-    for (const chip of chips) {
-      if (Math.hypot(x - chip.x, y - chip.y) <= chip.rad) {
-        return [chip.color[0], chip.color[1], chip.color[2], 255];
-      }
-    }
+    return [r, g, b, 255];
   }
 
-  return [r, g, b, 255];
+  return [0, 0, 0, 0];
 }
 
 /**
@@ -238,42 +340,57 @@ export function renderIconRgba(size, samples = 3) {
 }
 
 /**
- * Genera el archivo SVG maestro del emblema Escudo Cibernético + Cookie.
+ * Genera el archivo SVG maestro del emblema de doble galleta con mordida y migas.
  * @returns {string}
  */
 export function buildMasterSvg() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="shieldBg" x1="16" y1="12" x2="112" y2="118" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1E293B" />
-      <stop offset="100%" stop-color="#0F172A" />
-    </linearGradient>
-    <mask id="cookieBite">
+    <radialGradient id="cookieDoughBack" cx="38%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#F3C16D" />
+      <stop offset="72%" stop-color="#DF9B3E" />
+      <stop offset="100%" stop-color="#B96E1F" />
+    </radialGradient>
+    <radialGradient id="cookieDoughFront" cx="42%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#F6C878" />
+      <stop offset="70%" stop-color="#E3A145" />
+      <stop offset="100%" stop-color="#BE7222" />
+    </radialGradient>
+    <mask id="frontCookieBite">
       <rect width="128" height="128" fill="#FFFFFF" />
-      <circle cx="83" cy="50" r="10.5" fill="#000000" />
+      <circle cx="107" cy="42" r="17.5" fill="#000000" />
+      <circle cx="113" cy="53" r="16" fill="#000000" />
+      <circle cx="120" cy="65" r="17.5" fill="#000000" />
     </mask>
   </defs>
-  <path
-    d="M64 10L110 26V60C110 88.5 90.4 109.2 64 118C37.6 109.2 18 88.5 18 60V26L64 10Z"
-    fill="url(#shieldBg)"
-    stroke="#10B981"
-    stroke-width="6"
-    stroke-linejoin="round"
-  />
-  <path
-    d="M64 16L104 30V60C104 84.8 87.2 103.1 64 111.2C40.8 103.1 24 84.8 24 60V30L64 16Z"
-    stroke="#06B6D4"
-    stroke-opacity="0.55"
-    stroke-width="2"
-    stroke-linejoin="round"
-  />
-  <g mask="url(#cookieBite)">
-    <circle cx="64" cy="66" r="26" fill="#1E293B" stroke="#06B6D4" stroke-width="4" />
-    <circle cx="55" cy="59" r="4.2" fill="#10B981" />
-    <circle cx="70" cy="72" r="4.5" fill="#10B981" />
-    <circle cx="57" cy="77" r="3.5" fill="#06B6D4" />
-    <circle cx="69" cy="57" r="3" fill="#F1F5F9" />
+
+  <!-- Galleta trasera -->
+  <g>
+    <circle cx="44" cy="58" r="37.5" fill="url(#cookieDoughBack)" stroke="#B4691D" stroke-width="1.5" />
+    <circle cx="36" cy="33" r="4.2" fill="#63361E" />
+    <circle cx="53" cy="31" r="4.5" fill="#63361E" />
+    <circle cx="27.5" cy="42.5" r="3.4" fill="#63361E" />
+    <circle cx="47" cy="48" r="5.4" fill="#5A2F18" />
+    <circle cx="24" cy="59.5" r="4.2" fill="#63361E" />
+    <circle cx="38" cy="63.5" r="3.4" fill="#63361E" />
+    <circle cx="34.5" cy="79" r="5" fill="#5A2F18" />
   </g>
+
+  <!-- Galleta delantera con mordida -->
+  <g mask="url(#frontCookieBite)">
+    <circle cx="80" cy="70" r="41" fill="url(#cookieDoughFront)" stroke="#B4691D" stroke-width="1.5" />
+    <circle cx="77" cy="47" r="5.6" fill="#5A2F18" />
+    <circle cx="59.5" cy="61" r="4.5" fill="#63361E" />
+    <circle cx="83" cy="68" r="6.4" fill="#5A2F18" />
+    <circle cx="66" cy="79" r="5.5" fill="#63361E" />
+    <circle cx="86" cy="91" r="4.5" fill="#63361E" />
+    <circle cx="103" cy="82.5" r="5.2" fill="#5A2F18" />
+  </g>
+
+  <!-- Migas -->
+  <ellipse cx="103.5" cy="43.5" rx="6" ry="5.4" fill="#E4A347" stroke="#BA6F22" stroke-width="1" />
+  <circle cx="116" cy="54.5" r="3.4" fill="#E4A347" stroke="#BA6F22" stroke-width="0.8" />
+  <ellipse cx="116.5" cy="68.5" rx="5.5" ry="4.3" fill="#E4A347" stroke="#BA6F22" stroke-width="1" />
 </svg>
 `;
 }
@@ -297,7 +414,7 @@ export function generateAllIcons(rootDir = path.resolve(path.dirname(fileURLToPa
     { file: path.join(iconsDir, 'icon32.png'), size: 32, samples: 4 },
     { file: path.join(iconsDir, 'icon48.png'), size: 48, samples: 3 },
     { file: path.join(iconsDir, 'icon128.png'), size: 128, samples: 3 },
-    { file: path.join(storeDir, 'logo-300x300.png'), size: 300, samples: 2 }
+    { file: path.join(storeDir, 'logo-300x300.png'), size: 300, samples: 3 }
   ];
 
   const report = [];

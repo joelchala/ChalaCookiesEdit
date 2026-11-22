@@ -12,16 +12,16 @@ export const APP_META = Object.freeze({
 });
 
 export const THEME_PALETTE = Object.freeze({
-  bgPrimary: '#0F172A',
-  bgSurface: '#1E293B',
-  bgSurfaceHover: '#263549',
-  border: '#334155',
-  textPrimary: '#F1F5F9',
-  textMuted: '#94A3B8',
-  accentPrimary: '#10B981',
-  accentSecondary: '#06B6D4',
-  danger: '#EF4444',
-  warning: '#F59E0B'
+  bgPrimary: '#FAF7F2',
+  bgSurface: '#FFFFFF',
+  bgSurfaceHover: '#FFF1E0',
+  border: '#E4DDD3',
+  textPrimary: '#111111',
+  textMuted: '#57534E',
+  accentPrimary: '#EA580C',
+  accentSecondary: '#18181B',
+  danger: '#DC2626',
+  warning: '#D97706'
 });
 
 export const RESTRICTED_URL_PREFIXES = Object.freeze([
@@ -49,9 +49,9 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 export const BADGE_CONFIG = Object.freeze({
-  backgroundColor: '#10B981',
-  textColor: '#0F172A',
-  blockedBackgroundColor: '#EF4444'
+  backgroundColor: '#EA580C',
+  textColor: '#FFFFFF',
+  blockedBackgroundColor: '#111111'
 });
 
 export const SUITE_LINKS = Object.freeze({

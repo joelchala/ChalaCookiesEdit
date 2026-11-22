@@ -9,6 +9,198 @@ import { RESTRICTED_URL_PREFIXES } from '../config.js';
 const VALID_SAMESITE = new Set(['no_restriction', 'lax', 'strict', 'unspecified']);
 
 /**
+ * Sintaxis estricta de hostname (etiquetas DNS alfanuméricas con guiones internos).
+ * Rechaza `@`, `:`, `/`, espacios, credenciales embebidas y cualquier carácter extra.
+ */
+export const STRICT_HOSTNAME_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
+const IPV6_LITERAL_RE = /^\[[0-9a-f:.]+\]$/;
+const INVALID_PATH_RE = /[\s?#\\\u0000-\u001f\u007f]/;
+
+/**
+ * Valida un hostname contra la sintaxis estricta (sin punto inicial).
+ * @param {string | null | undefined} host
+ * @returns {boolean}
+ */
+export function isValidHostname(host) {
+  if (typeof host !== 'string') return false;
+  const value = host.toLowerCase();
+  if (!value || value.length > 253) return false;
+  if (!STRICT_HOSTNAME_RE.test(value)) return false;
+  return value.split('.').every((label) => label.length <= 63);
+}
+
+/**
+ * Valida un dominio de cookie (admite un único punto inicial para cookies de dominio).
+ * @param {string | null | undefined} domain
+ * @returns {boolean}
+ */
+export function isValidCookieDomain(domain) {
+  if (typeof domain !== 'string') return false;
+  const trimmed = domain.trim();
+  const withoutDot = trimmed.startsWith('.') ? trimmed.slice(1) : trimmed;
+  return isValidHostname(withoutDot);
+}
+
+/**
+ * Normaliza una partitionKey de CHIPS conservando solo campos válidos.
+ * Devuelve `undefined` si la cookie no está particionada.
+ * @param {any} partitionKey
+ * @returns {{ topLevelSite?: string, hasCrossSiteAncestor?: boolean } | undefined}
+ */
+export function normalizePartitionKey(partitionKey) {
+  if (!partitionKey || typeof partitionKey !== 'object' || Array.isArray(partitionKey)) {
+    return undefined;
+  }
+  /** @type {{ topLevelSite?: string, hasCrossSiteAncestor?: boolean }} */
+  const out = {};
+  if (typeof partitionKey.topLevelSite === 'string' && partitionKey.topLevelSite.trim()) {
+    out.topLevelSite = partitionKey.topLevelSite.trim();
+  }
+  if (typeof partitionKey.hasCrossSiteAncestor === 'boolean') {
+    out.hasCrossSiteAncestor = partitionKey.hasCrossSiteAncestor;
+  }
+  return out.topLevelSite ? out : undefined;
+}
+
+/**
+ * Indica si una cookie pertenece a una partición CHIPS.
+ * @param {{ partitionKey?: any } | null | undefined} cookie
+ * @returns {boolean}
+ */
+export function isPartitionedCookie(cookie) {
+  return Boolean(normalizePartitionKey(cookie?.partitionKey));
+}
+
+/**
+ * Comprueba si un dominio de cookie está relacionado con un host
+ * (igual, subdominio del host o dominio padre del host).
+ * @param {string | null | undefined} cookieDomain
+ * @param {string | null | undefined} host
+ * @returns {boolean}
+ */
+export function isDomainRelated(cookieDomain, host) {
+  const a = normalizeDomain(cookieDomain);
+  const b = normalizeDomain(host);
+  if (!a || !b) return false;
+  return a === b || b.endsWith(`.${a}`) || a.endsWith(`.${b}`);
+}
+
+/**
+ * Indica si un dominio de cookie es el host activo o uno de sus subdominios.
+ * Los dominios padre (p. ej. `.example.com` desde `app.example.com`) se consideran externos.
+ * @param {string | null | undefined} cookieDomain
+ * @param {string | null | undefined} activeHost
+ * @returns {boolean}
+ */
+export function isSameOrSubdomain(cookieDomain, activeHost) {
+  const a = normalizeDomain(cookieDomain);
+  const b = normalizeDomain(activeHost);
+  if (!a || !b) return false;
+  return a === b || a.endsWith(`.${b}`);
+}
+
+/**
+ * Clasifica un lote de cookies importadas frente al host activo (protección contra Session Fixation):
+ * - `allowed`: dominio vacío (host-only de la pestaña), host activo o subdominios.
+ * - `external`: dominios válidos ajenos al host activo (requieren confirmación explícita).
+ * - `invalid`: dominios con sintaxis inválida (siempre rechazados).
+ * @param {Array<Record<string, any>>} cookies
+ * @param {string} activeHost
+ * @returns {{
+ *   allowed: Array<Record<string, any>>,
+ *   external: Array<Record<string, any>>,
+ *   invalid: Array<Record<string, any>>,
+ *   externalDomains: string[]
+ * }}
+ */
+export function classifyImportedCookies(cookies, activeHost) {
+  const allowed = [];
+  const external = [];
+  const invalid = [];
+  const externalDomains = new Set();
+
+  for (const cookie of Array.isArray(cookies) ? cookies : []) {
+    const domain = String(cookie?.domain ?? '').trim();
+    if (!domain) {
+      allowed.push(cookie);
+      continue;
+    }
+    if (!isValidCookieDomain(domain)) {
+      invalid.push(cookie);
+      continue;
+    }
+    if (isSameOrSubdomain(domain, activeHost)) {
+      allowed.push(cookie);
+    } else {
+      external.push(cookie);
+      externalDomains.add(normalizeDomain(domain));
+    }
+  }
+
+  return {
+    allowed,
+    external,
+    invalid,
+    externalDomains: Array.from(externalDomains).sort()
+  };
+}
+
+/**
+ * Resuelve el cookie store real de una pestaña (normal, incógnito u otro perfil)
+ * mediante chrome.cookies.getAllCookieStores().
+ * @param {{ getAllCookieStores?: Function } | null | undefined} cookiesApi
+ * @param {number | null | undefined} tabId
+ * @returns {Promise<string | undefined>}
+ */
+export async function resolveCookieStoreId(cookiesApi, tabId) {
+  if (typeof tabId !== 'number' || typeof cookiesApi?.getAllCookieStores !== 'function') {
+    return undefined;
+  }
+  try {
+    const stores = await cookiesApi.getAllCookieStores();
+    const match = (stores || []).find(
+      (store) => Array.isArray(store?.tabIds) && store.tabIds.includes(tabId)
+    );
+    return typeof match?.id === 'string' ? match.id : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Ejecuta chrome.cookies.getAll incluyendo `partitionKey: {}` (todas las particiones CHIPS).
+ * Si el navegador no soporta partitionKey (Chromium < 119), reintenta sin ella.
+ * @param {{ getAll: Function }} cookiesApi
+ * @param {Record<string, any>} query
+ * @returns {Promise<Array<Record<string, any>>>}
+ */
+export async function getAllCookiesWithPartitions(cookiesApi, query) {
+  const base = { ...query };
+  if (typeof base.storeId !== 'string' || !base.storeId) delete base.storeId;
+  try {
+    return (await cookiesApi.getAll({ ...base, partitionKey: {} })) || [];
+  } catch {
+    return (await cookiesApi.getAll(base)) || [];
+  }
+}
+
+/**
+ * Firma única de cookie (store + partición + dominio + ruta + nombre).
+ * @param {Record<string, any>} cookie
+ * @returns {string}
+ */
+export function getCookieIdentity(cookie) {
+  const pk = normalizePartitionKey(cookie?.partitionKey);
+  return [
+    cookie?.storeId || '',
+    pk?.topLevelSite || '',
+    cookie?.domain,
+    cookie?.path,
+    cookie?.name
+  ].join('::');
+}
+
+/**
  * Determina si una URL corresponde a una página interna o restringida del navegador
  * donde la API chrome.cookies no puede operar.
  * @param {string | null | undefined} url
@@ -49,14 +241,28 @@ export function normalizeDomain(domain) {
   return String(domain ?? '').trim().toLowerCase().replace(/^\.+/, '');
 }
 
+/** Cookie store por defecto de Chromium (perfil normal). */
+export const DEFAULT_STORE_ID = '0';
+
 /**
- * Genera la clave única de bloqueo para una cookie (dominio normalizado + nombre).
- * @param {string | null | undefined} domain
- * @param {string | null | undefined} name
+ * Normaliza un storeId devolviendo el store por defecto si está vacío.
+ * @param {string | null | undefined} storeId
  * @returns {string}
  */
-export function getBlockedCookieKey(domain, name) {
-  return `${normalizeDomain(domain)}::${String(name ?? '')}`;
+export function normalizeStoreId(storeId) {
+  return typeof storeId === 'string' && storeId.trim() ? storeId.trim() : DEFAULT_STORE_ID;
+}
+
+/**
+ * Genera la clave única de bloqueo aislada por cookie store:
+ * `${storeId}:${dominio normalizado}:${nombre}`.
+ * @param {string | null | undefined} domain
+ * @param {string | null | undefined} name
+ * @param {string | null | undefined} [storeId]
+ * @returns {string}
+ */
+export function getBlockedCookieKey(domain, name, storeId) {
+  return `${normalizeStoreId(storeId)}:${normalizeDomain(domain)}:${String(name ?? '').trim()}`;
 }
 
 /**
@@ -86,14 +292,43 @@ export function buildCookieUrl(cookie, fallbackProtocol = 'https:') {
     throw new Error('Se requiere un dominio válido para construir la URL de la cookie.');
   }
 
+  const lowerDomain = cleanDomain.toLowerCase();
+  const isIpv6 = IPV6_LITERAL_RE.test(lowerDomain);
+  if (!isIpv6 && !isValidHostname(lowerDomain)) {
+    throw new Error(`Dominio de cookie inválido: "${cleanDomain}".`);
+  }
+
   const rawPath = String(cookie?.path ?? '/').trim() || '/';
   const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  if (INVALID_PATH_RE.test(cleanPath)) {
+    throw new Error(`Ruta de cookie inválida: "${cleanPath}".`);
+  }
 
   const useHttps =
     Boolean(cookie?.secure) ||
     String(fallbackProtocol ?? '').trim().toLowerCase().startsWith('https');
 
-  return `${useHttps ? 'https://' : 'http://'}${cleanDomain}${cleanPath}`;
+  const builtUrl = `${useHttps ? 'https://' : 'http://'}${cleanDomain}${cleanPath}`;
+
+  // Verificación final: el host efectivo debe coincidir exactamente con el dominio declarado.
+  let parsed;
+  try {
+    parsed = new URL(builtUrl);
+  } catch {
+    throw new Error(`URL de cookie inválida para el dominio "${cleanDomain}".`);
+  }
+  if (
+    parsed.hostname !== lowerDomain ||
+    parsed.username ||
+    parsed.password ||
+    parsed.port ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(`El dominio "${cleanDomain}" no produce un host seguro y verificable.`);
+  }
+
+  return builtUrl;
 }
 
 /**
@@ -103,8 +338,10 @@ export function buildCookieUrl(cookie, fallbackProtocol = 'https:') {
  *   omitiendo la propiedad `domain`.
  * - Si domain empieza con '.', incluye `domain` para compartir con subdominios.
  * - Nunca deja propiedades `undefined`.
+ * - Valida estrictamente el dominio/host (S2) antes de construir la URL.
+ * - Conserva `partitionKey` (CHIPS) y prioriza `options.storeId` sobre el storeId de entrada.
  * @param {Record<string, any>} cookieInput
- * @param {{ tabUrl?: string, tabProtocol?: string, tabHost?: string }} [options]
+ * @param {{ tabUrl?: string, tabProtocol?: string, tabHost?: string, storeId?: string }} [options]
  * @returns {Record<string, any>}
  */
 export function buildCookieSetDetails(cookieInput, options = {}) {
@@ -129,8 +366,10 @@ export function buildCookieSetDetails(cookieInput, options = {}) {
   }
 
   const sameSite = normalizeSameSite(cookieInput?.sameSite);
+  const partitionKey = normalizePartitionKey(cookieInput?.partitionKey);
   let secure = Boolean(cookieInput?.secure);
-  if (sameSite === 'no_restriction') {
+  if (sameSite === 'no_restriction' || partitionKey) {
+    // SameSite=None y las cookies particionadas (CHIPS) exigen Secure en Chromium.
     secure = true;
   }
 
@@ -187,51 +426,68 @@ export function buildCookieSetDetails(cookieInput, options = {}) {
     }
   }
 
-  if (typeof cookieInput?.storeId === 'string' && cookieInput.storeId.trim()) {
+  if (typeof options.storeId === 'string' && options.storeId.trim()) {
+    details.storeId = options.storeId.trim();
+  } else if (typeof cookieInput?.storeId === 'string' && cookieInput.storeId.trim()) {
     details.storeId = cookieInput.storeId.trim();
+  }
+
+  if (partitionKey) {
+    details.partitionKey = partitionKey;
   }
 
   return details;
 }
 
 /**
- * Construye los parámetros seguros para chrome.cookies.remove.
- * @param {{ name: string, domain?: string, path?: string, secure?: boolean, storeId?: string }} cookie
+ * Construye los parámetros seguros para chrome.cookies.remove (incluye storeId y partitionKey).
+ * @param {{ name: string, domain?: string, path?: string, secure?: boolean, storeId?: string, partitionKey?: any }} cookie
  * @param {string} [fallbackProtocol='https:']
- * @returns {{ url: string, name: string, storeId?: string }}
+ * @param {{ storeId?: string }} [options]
+ * @returns {{ url: string, name: string, storeId?: string, partitionKey?: Record<string, any> }}
  */
-export function buildCookieRemovalDetails(cookie, fallbackProtocol = 'https:') {
+export function buildCookieRemovalDetails(cookie, fallbackProtocol = 'https:', options = {}) {
+  /** @type {{ url: string, name: string, storeId?: string, partitionKey?: Record<string, any> }} */
   const details = {
     url: buildCookieUrl(cookie, fallbackProtocol),
     name: String(cookie?.name ?? '')
   };
   if (typeof cookie?.storeId === 'string' && cookie.storeId.trim()) {
     details.storeId = cookie.storeId.trim();
+  } else if (typeof options?.storeId === 'string' && options.storeId.trim()) {
+    details.storeId = options.storeId.trim();
+  }
+  const partitionKey = normalizePartitionKey(cookie?.partitionKey);
+  if (partitionKey) {
+    details.partitionKey = partitionKey;
   }
   return details;
 }
 
 /**
  * Obtiene y deduplica todas las cookies asociadas a la URL de la pestaña activa
- * (incluyendo subdominios/cookies de dominio).
+ * (incluyendo subdominios/cookies de dominio y cookies particionadas CHIPS)
+ * dentro del cookie store indicado (normal o incógnito).
  * @param {{ getAll: Function }} cookiesApi
  * @param {string} tabUrl
+ * @param {{ storeId?: string }} [options]
  * @returns {Promise<Array<Record<string, any>>>}
  */
-export async function getCookiesForTabUrl(cookiesApi, tabUrl) {
+export async function getCookiesForTabUrl(cookiesApi, tabUrl, options = {}) {
   if (isRestrictedUrl(tabUrl) || !cookiesApi?.getAll) {
     return [];
   }
 
   const parsed = new URL(tabUrl);
+  const storeId = typeof options?.storeId === 'string' ? options.storeId : undefined;
   const [byUrl, byDomain] = await Promise.all([
-    cookiesApi.getAll({ url: tabUrl }),
-    cookiesApi.getAll({ domain: parsed.hostname })
+    getAllCookiesWithPartitions(cookiesApi, { url: tabUrl, storeId }),
+    getAllCookiesWithPartitions(cookiesApi, { domain: parsed.hostname, storeId })
   ]);
 
   const map = new Map();
   for (const cookie of [...(byUrl || []), ...(byDomain || [])]) {
-    const key = `${cookie.storeId || ''}::${cookie.domain}::${cookie.path}::${cookie.name}`;
+    const key = getCookieIdentity(cookie);
     if (!map.has(key)) {
       map.set(key, cookie);
     }
@@ -296,6 +552,12 @@ function normalizePortableCookie(raw) {
 
   if (typeof raw.storeId === 'string' && raw.storeId.trim()) {
     normalized.storeId = raw.storeId.trim();
+  }
+
+  const partitionKey = normalizePartitionKey(raw.partitionKey);
+  if (partitionKey) {
+    normalized.partitionKey = partitionKey;
+    normalized.secure = true;
   }
 
   return normalized;
