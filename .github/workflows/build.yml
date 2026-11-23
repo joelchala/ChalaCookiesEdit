@@ -27,11 +27,13 @@ jobs:
       - name: Generate native PNG & SVG icons
         run: node tools/generate-icons.mjs
 
+      - name: Build unpacked MV3 and ZIP packages
+        run: |
+          node tools/make-mv3.mjs
+          ls -lh store/paquetes/ChalaCookiesEdit_*.firefox.zip
+
       - name: Run verification test suite
         run: node tests/verify.mjs
-
-      - name: Build unpacked MV3 and ZIP packages
-        run: node tools/make-mv3.mjs
 
       - name: Upload store packages artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -60,8 +62,9 @@ jobs:
       - name: Generate icons, verify and build release packages
         run: |
           node tools/generate-icons.mjs
-          node tests/verify.mjs
           node tools/make-mv3.mjs
+          node tests/verify.mjs
+          ls -lh store/paquetes/ChalaCookiesEdit_*.firefox.zip
 
       - name: Publish GitHub Release on version tag
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2

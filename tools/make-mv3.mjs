@@ -135,7 +135,78 @@ function collectFilesRecursive(baseDir, currentDir = baseDir) {
 }
 
 /**
- * Compila dist/build/ChalaCookiesEdit.chromium/ y genera los paquetes .zip para Chromium y Edge.
+ * Transforma un manifiesto MV3 de Chromium/Edge a formato compatible con Mozilla Firefox (AMO).
+ * @param {Record<string, any>} manifest
+ * @param {string} [geckoId='chalacookiesedit@chaladev.site']
+ * @returns {Record<string, any>}
+ */
+export function toFirefoxManifest(manifest, geckoId = 'chalacookiesedit@chaladev.site') {
+  const ff = structuredClone(manifest);
+  ff.browser_specific_settings = {
+    ...(ff.browser_specific_settings || {}),
+    gecko: {
+      ...(ff.browser_specific_settings?.gecko || {}),
+      id: geckoId,
+      strict_min_version: '113.0'
+    }
+  };
+  if (ff.background && ff.background.service_worker) {
+    const { service_worker: sw, ...rest } = ff.background;
+    ff.background = {
+      scripts: [sw],
+      ...rest
+    };
+  }
+  return ff;
+}
+
+/**
+ * Extrae el contenido de una entrada específica desde un buffer ZIP estándar PKZIP.
+ * @param {Buffer} zipBuffer
+ * @param {string} targetName
+ * @returns {Buffer | null}
+ */
+export function extractZipEntry(zipBuffer, targetName) {
+  let eocdOffset = -1;
+  for (let i = zipBuffer.length - 22; i >= Math.max(0, zipBuffer.length - 65557); i -= 1) {
+    if (zipBuffer.readUInt32LE(i) === 0x06054b50) {
+      eocdOffset = i;
+      break;
+    }
+  }
+  if (eocdOffset === -1) {
+    throw new Error('Archivo ZIP inválido: falta firma EOCD');
+  }
+  const totalEntries = zipBuffer.readUInt16LE(eocdOffset + 10);
+  const cdOffset = zipBuffer.readUInt32LE(eocdOffset + 16);
+
+  let cursor = cdOffset;
+  for (let i = 0; i < totalEntries; i += 1) {
+    if (zipBuffer.readUInt32LE(cursor) !== 0x02014b50) {
+      throw new Error('Archivo ZIP inválido: Central Directory corrupto');
+    }
+    const method = zipBuffer.readUInt16LE(cursor + 10);
+    const compSize = zipBuffer.readUInt32LE(cursor + 20);
+    const nameLen = zipBuffer.readUInt16LE(cursor + 28);
+    const extraLen = zipBuffer.readUInt16LE(cursor + 30);
+    const commentLen = zipBuffer.readUInt16LE(cursor + 32);
+    const localOffset = zipBuffer.readUInt32LE(cursor + 42);
+    const entryName = zipBuffer.subarray(cursor + 46, cursor + 46 + nameLen).toString('utf8');
+
+    if (entryName === targetName) {
+      const lfhNameLen = zipBuffer.readUInt16LE(localOffset + 26);
+      const lfhExtraLen = zipBuffer.readUInt16LE(localOffset + 28);
+      const dataStart = localOffset + 30 + lfhNameLen + lfhExtraLen;
+      const compData = zipBuffer.subarray(dataStart, dataStart + compSize);
+      return method === 8 ? zlib.inflateRawSync(compData) : Buffer.from(compData);
+    }
+    cursor += 46 + nameLen + extraLen + commentLen;
+  }
+  return null;
+}
+
+/**
+ * Compila dist/build/ChalaCookiesEdit.chromium/ y genera los paquetes .zip para Chromium, Edge y Firefox (AMO).
  * @param {string} [rootDir]
  * @returns {{ version: string, unpackedDir: string, packages: string[], fileCount: number }}
  */
@@ -176,22 +247,34 @@ export function buildMv3Packages(rootDir = path.resolve(path.dirname(fileURLToPa
   }));
 
   const zipBuffer = createZipBuffer(zipEntries);
+  const firefoxManifestBuf = Buffer.from(`${JSON.stringify(toFirefoxManifest(manifest), null, 2)}\n`, 'utf8');
+  const firefoxEntries = zipEntries.map((entry) =>
+    entry.name === 'manifest.json'
+      ? { name: entry.name, data: firefoxManifestBuf, mtime: entry.mtime }
+      : entry
+  );
+  const firefoxZipBuffer = createZipBuffer(firefoxEntries);
 
   fs.mkdirSync(packagesDir, { recursive: true });
   fs.mkdirSync(buildDir, { recursive: true });
   const chromiumZip = path.join(packagesDir, `ChalaCookiesEdit_${version}.chromium.zip`);
   const edgeZip = path.join(packagesDir, `ChalaCookiesEdit_${version}.edge.zip`);
+  const firefoxZip = path.join(packagesDir, `ChalaCookiesEdit_${version}.firefox.zip`);
   const buildChromiumZip = path.join(buildDir, `ChalaCookiesEdit_${version}.chromium.zip`);
   const buildEdgeZip = path.join(buildDir, `ChalaCookiesEdit_${version}.edge.zip`);
+  const buildFirefoxZip = path.join(buildDir, `ChalaCookiesEdit_${version}.firefox.zip`);
 
   for (const outPath of [chromiumZip, edgeZip, buildChromiumZip, buildEdgeZip]) {
     fs.writeFileSync(outPath, zipBuffer);
+  }
+  for (const outPath of [firefoxZip, buildFirefoxZip]) {
+    fs.writeFileSync(outPath, firefoxZipBuffer);
   }
 
   return {
     version,
     unpackedDir,
-    packages: [chromiumZip, edgeZip],
+    packages: [chromiumZip, edgeZip, firefoxZip],
     fileCount: zipEntries.length
   };
 }

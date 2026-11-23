@@ -43,7 +43,7 @@ import {
   updateBadgeForTab
 } from '../src/background.js';
 import { crc32 } from '../tools/generate-icons.mjs';
-import { createZipBuffer } from '../tools/make-mv3.mjs';
+import { buildMv3Packages, createZipBuffer, extractZipEntry } from '../tools/make-mv3.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -580,6 +580,18 @@ await runTest('11. createZipBuffer genera estructura PKZIP estándar e inflado e
 
     cursor += 46 + nameLen + extraLen + commentLen;
   }
+
+  // Verificar compilación de paquetes .chromium.zip, .edge.zip y .firefox.zip (AMO)
+  const buildResult = buildMv3Packages(ROOT_DIR);
+  const firefoxPkgPath = path.join(ROOT_DIR, 'store', 'paquetes', `ChalaCookiesEdit_${buildResult.version}.firefox.zip`);
+  assert.ok(fs.existsSync(firefoxPkgPath), `Falta paquete Firefox: ${firefoxPkgPath}`);
+  const ffRawManifest = extractZipEntry(fs.readFileSync(firefoxPkgPath), 'manifest.json');
+  assert.ok(ffRawManifest, 'Falta manifest.json dentro de .firefox.zip');
+  const ffManifest = JSON.parse(ffRawManifest.toString('utf8'));
+  assert.equal(ffManifest.browser_specific_settings?.gecko?.id, 'chalacookiesedit@chaladev.site');
+  assert.equal(ffManifest.browser_specific_settings?.gecko?.strict_min_version, '113.0');
+  assert.deepEqual(ffManifest.background?.scripts, ['background.js']);
+  assert.equal(ffManifest.background?.service_worker, undefined);
 });
 
 // 12. S1 y S2: Validación estricta de dominio y protección contra Session Fixation
