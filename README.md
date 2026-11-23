@@ -1,6 +1,6 @@
 # ChalaCookiesEdit
 
-**ChalaCookiesEdit** es una extensión Manifest V3 (Chromium / Google Chrome / Microsoft Edge) perteneciente a la **Suite Chala** (junto a *Chalablock*, *ChalaVPN*, *ChalaTabs* y *ChalaDev*). Permite editar, crear, duplicar, inspeccionar tokens JWT, gestionar cookies particionadas (CHIPS), bloquear en tiempo real, importar y exportar cookies de forma **100 % local**, con interfaz clásica clara en naranja y negro, sin dependencias externas en producción ni telemetría.
+**ChalaCookiesEdit** es una extensión Manifest V3 (Chromium / Google Chrome / Microsoft Edge) perteneciente a la **Suite Chala** (junto a *Chalablock*, *ChalaVPN*, *ChalaTabs*, *ChalaDev*, *ChalaReader* y *ChalaScrape*). Permite editar, crear, duplicar, inspeccionar tokens JWT, gestionar cookies particionadas (CHIPS), bloquear en tiempo real, importar y exportar cookies de forma **100 % local**, con interfaz clásica clara en naranja y negro, sin dependencias externas en producción ni telemetría.
 
 ---
 
@@ -54,7 +54,10 @@ ChalaCookiesEdit/
 ├── dist/
 │   ├── README.md
 │   ├── version
-│   └── build/ChalaCookiesEdit.chromium/
+│   └── build/
+│       ├── ChalaCookiesEdit.chromium/
+│       ├── ChalaCookiesEdit_1.0.0.chromium.zip
+│       └── ChalaCookiesEdit_1.0.0.edge.zip
 ├── docs/
 │   ├── README.md
 │   └── index.html
@@ -102,6 +105,20 @@ npm run clean
 ## Instalación en modo desarrollador
 
 Consulta la guía paso a paso en [dist/README.md](dist/README.md) para cargar la carpeta `dist/build/ChalaCookiesEdit.chromium/` en Google Chrome o Microsoft Edge.
+
+---
+
+## Suite Chala
+
+**ChalaCookiesEdit** forma parte de la **Suite Chala** de extensiones para navegador enfocadas en privacidad, rendimiento y productividad:
+
+- **[Chalablock](https://github.com/joelchala/Chalablock)** — Bloqueador de anuncios y rastreadores ligero (Manifest V3)
+- **[ChalaCookiesEdit](https://github.com/joelchala/ChalaCookiesEdit)** — Editor de cookies local con soporte CHIPS, incógnito, bloqueo e inspector JWT
+- **[ChalaDev](https://github.com/joelchala/ChalaDev)** — Suite de utilidades locales en el Side Panel para desarrolladores y diseñadores UI/UX
+- **[ChalaReader](https://github.com/joelchala/ChalaReader)** — Modo lectura limpio con Shadow DOM, temas visuales, Markdown, PDF y guardado offline
+- **[ChalaScrape](https://github.com/joelchala/ChalaScrape)** — Extractor visual de tablas, listas y tarjetas web a Excel (`.xlsx`) y CSV
+- **[ChalaTabs](https://github.com/joelchala/ChalaTabs)** — Gestor de pestañas en espacios de trabajo, ahorro de RAM y buscador instantáneo
+- **[ChalaVPN](https://github.com/joelchala/ChalaVPN)** — Proxy HTTPS/SOCKS5 con protección contra fugas de WebRTC
 
 ---
 
