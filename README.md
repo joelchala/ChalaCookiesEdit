@@ -1,6 +1,10 @@
 # ChalaCookiesEdit
 
-**ChalaCookiesEdit** es una extensión Manifest V3 (Chromium / Google Chrome / Microsoft Edge) perteneciente a la **Suite Chala** (junto a *Chalablock*, *ChalaVPN*, *ChalaTabs*, *ChalaDev*, *ChalaReader* y *ChalaScrape*). Permite editar, crear, duplicar, inspeccionar tokens JWT, gestionar cookies particionadas (CHIPS), bloquear en tiempo real, importar y exportar cookies de forma **100 % local**, con interfaz clásica clara en naranja y negro, sin dependencias externas en producción ni telemetría.
+**ChalaCookiesEdit** es una extensión Manifest V3 (Chromium / Google Chrome / Microsoft Edge / Mozilla Firefox) perteneciente a la **Suite Chala** ([chaladev.site](https://chaladev.site/), junto a *Chalablock*, *ChalaVPN*, *ChalaTabs*, *ChalaDev*, *ChalaReader* y *ChalaScrape*). Permite editar, crear, duplicar, inspeccionar tokens JWT, gestionar cookies particionadas (CHIPS), bloquear en tiempo real, importar y exportar cookies de forma **100 % local**, sin dependencias externas en producción ni telemetría.
+
+- **Sitio oficial:** [chaladev.site](https://chaladev.site/)
+- **Contacto:** [info@chaladev.site](mailto:info@chaladev.site)
+- **Tiendas:** Microsoft Edge Add-ons *(en revisión)* · Mozilla Firefox Add-ons / AMO *(paquete `.firefox.zip` validado con 0 errores, listo para publicación)* · Chrome Web Store *(pendiente de cupo)*
 
 ---
 
@@ -27,7 +31,7 @@
 ## Versión y lanzamientos (`v1.0.0`)
 
 - **Versión actual:** `v1.0.0` (sincronizada en `dist/version`, `package.json`, `src/config.js` y `src/manifest.json`).
-- **Release en GitHub:** [Release v1.0.0](https://github.com/joelchala/ChalaCookiesEdit/releases/tag/v1.0.0) con paquetes listos para tienda adjuntos (`ChalaCookiesEdit_1.0.0.chromium.zip` y `ChalaCookiesEdit_1.0.0.edge.zip`).
+- **Release en GitHub:** [Release v1.0.0](https://github.com/joelchala/ChalaCookiesEdit/releases/tag/v1.0.0) con paquetes listos para tienda (`ChalaCookiesEdit_1.0.0.chromium.zip`, `ChalaCookiesEdit_1.0.0.edge.zip` y `ChalaCookiesEdit_1.0.0.firefox.zip`).
 - **CI/CD endurecido:** Permisos de mínimo privilegio (`contents: read` global y `contents: write` aislado al job de release en tags `v*`) y GitHub Actions fijadas por SHA de commit completo.
 
 ---
@@ -38,6 +42,7 @@
 | :--- | :--- | :--- |
 | **Google Chrome / Chromium** | `>= 109` (`minimum_chrome_version`) | Manifest V3 con Service Worker ES module (`"type": "module"`). |
 | **Microsoft Edge** | `>= 109` (basado en Chromium) | Compatible con carga descomprimida y paquete `.edge.zip`. |
+| **Mozilla Firefox (AMO)** | `>= 113.0` (`strict_min_version`) | Paquete `.firefox.zip` generado dinámicamente desde `src/` (`chalacookiesedit@chaladev.site`, `background.scripts` y `data_collection_permissions`). |
 | **Cookies Particionadas (CHIPS)** | Chromium `>= 119` (con fallback `< 119`) | Consulta `partitionKey: {}` y preserva `partitionKey` en edición/borrado. |
 | **Node.js (Build & Tests)** | `>= 22.0.0` | Cero `dependencies` y cero `devDependencies`; suite de 14 pruebas integrales. |
 | **Formatos de intercambio** | JSON y Netscape `cookies.txt` | Compatible con `curl`, `wget` y `yt-dlp` (incluye `#HttpOnly_`). |
@@ -57,7 +62,8 @@ ChalaCookiesEdit/
 │   └── build/
 │       ├── ChalaCookiesEdit.chromium/
 │       ├── ChalaCookiesEdit_1.0.0.chromium.zip
-│       └── ChalaCookiesEdit_1.0.0.edge.zip
+│       ├── ChalaCookiesEdit_1.0.0.edge.zip
+│       └── ChalaCookiesEdit_1.0.0.firefox.zip
 ├── docs/
 │   ├── README.md
 │   └── index.html
@@ -93,7 +99,7 @@ npm run icons
 # 2. Ejecutar la suite integral de 14 pruebas (node:assert)
 npm test
 
-# 3. Compilar build descomprimido y paquetes .zip para Chrome y Edge
+# 3. Compilar build descomprimido y paquetes .zip para Chrome, Edge y Firefox AMO
 npm run build
 
 # 4. Limpiar artefactos generados (dist/build y store/paquetes)
@@ -104,13 +110,14 @@ npm run clean
 
 ## Instalación en modo desarrollador
 
-Consulta la guía paso a paso en [dist/README.md](dist/README.md) para cargar la carpeta `dist/build/ChalaCookiesEdit.chromium/` en Google Chrome o Microsoft Edge.
+- **Google Chrome / Microsoft Edge:** consulta la guía paso a paso en [dist/README.md](dist/README.md) para cargar la carpeta `dist/build/ChalaCookiesEdit.chromium/`.
+- **Mozilla Firefox:** abre `about:debugging#/runtime/this-firefox`, pulsa **Cargar complemento temporal…** y selecciona `store/paquetes/ChalaCookiesEdit_1.0.0.firefox.zip`.
 
 ---
 
 ## Suite Chala
 
-**ChalaCookiesEdit** forma parte de la **Suite Chala** de extensiones para navegador enfocadas en privacidad, rendimiento y productividad:
+**ChalaCookiesEdit** forma parte de la **Suite Chala** ([chaladev.site](https://chaladev.site/)) de extensiones para navegador enfocadas en privacidad, rendimiento y productividad:
 
 - **[Chalablock](https://github.com/joelchala/Chalablock)** — Bloqueador de anuncios y rastreadores ligero (Manifest V3)
 - **[ChalaCookiesEdit](https://github.com/joelchala/ChalaCookiesEdit)** — Editor de cookies local con soporte CHIPS, incógnito, bloqueo e inspector JWT
