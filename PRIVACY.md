@@ -28,6 +28,9 @@ Estos datos permanecen en tu dispositivo y se eliminan por completo al desinstal
 | `storage` | Persistir localmente las reglas de bloqueo de cookies (`storeId + dominio + nombre`) en `chrome.storage.local`. | Almacenamiento estrictamente local sin sincronización remota. |
 | `http://*/*`, `https://*/*` (`host_permissions`) | Principio de mínimo privilegio (en lugar de `<all_urls>` y sin requerir `activeTab`): necesario en Chromium/Edge MV3 para que `chrome.cookies` pueda leer, modificar y bloquear cookies de cualquier sitio web `http://` o `https://` que el usuario decida inspeccionar, y para conocer la URL de la pestaña activa al actualizar el badge. | Excluye esquemas no web (`file://`, `ftp://`, `chrome://`, `edge://`, `about:`). La extensión no declara `content_scripts` ni realiza peticiones HTTP salientes. |
 
+### 4. Contacto
+Para preguntas sobre privacidad escribe a <mailto:info@chaladev.site>, visita <https://chaladev.site/#privacidad> o abre un reporte en <https://github.com/joelchala/ChalaCookiesEdit/issues>.
+
 ---
 
 ## English (EN)
@@ -52,3 +55,6 @@ This data never leaves your device and is permanently removed when you unblock r
 | `cookies` | Read, create, edit, duplicate, export, import, and remove cookies (including CHIPS partitioned cookies and incognito `storeId` isolation) via `chrome.cookies`, and listen to `chrome.cookies.onChanged` to auto-delete user-blocked cookies. | Operates strictly on the active domain inspected by the user or on explicit user-configured blocking rules. |
 | `storage` | Persist user-configured cookie blocklists (`storeId + domain + name`) in `chrome.storage.local`. | Strictly local device storage. |
 | `http://*/*`, `https://*/*` (`host_permissions`) | Least-privilege scope (replacing `<all_urls>` and removing the redundant `activeTab` permission): required by Chromium/Edge Manifest V3 so `chrome.cookies` can access, edit, and enforce block rules across any `http://` or `https://` site the user chooses to inspect, and to read the active tab URL for the badge counter. | Excludes non-web schemes (`file://`, `ftp://`, `chrome://`, `edge://`, `about:`). No `content_scripts` are injected and no outbound network requests are made. |
+
+### 4. Contact
+For privacy questions, email <mailto:info@chaladev.site>, visit <https://chaladev.site/#privacidad>, or open an issue at <https://github.com/joelchala/ChalaCookiesEdit/issues>.
