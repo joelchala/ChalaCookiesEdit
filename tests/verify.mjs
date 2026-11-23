@@ -590,6 +590,9 @@ await runTest('11. createZipBuffer genera estructura PKZIP estándar e inflado e
   const ffManifest = JSON.parse(ffRawManifest.toString('utf8'));
   assert.equal(ffManifest.browser_specific_settings?.gecko?.id, 'chalacookiesedit@chaladev.site');
   assert.equal(ffManifest.browser_specific_settings?.gecko?.strict_min_version, '113.0');
+  assert.deepEqual(ffManifest.browser_specific_settings?.gecko?.data_collection_permissions, {
+    required: ['none']
+  });
   assert.deepEqual(ffManifest.background?.scripts, ['background.js']);
   assert.equal(ffManifest.background?.service_worker, undefined);
 });
