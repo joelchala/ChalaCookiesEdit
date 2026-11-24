@@ -9,3 +9,11 @@ secrets*.json
 .DS_Store
 Thumbs.db
 *.log
+
+# Local AI assistant instructions
+AGENTS.md
+agents.md
+AGENT.md
+agent.md
+CLAUDE.md
+claude.md
