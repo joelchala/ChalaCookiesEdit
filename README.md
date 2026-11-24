@@ -4,7 +4,7 @@
 
 - **Sitio oficial:** [chaladev.site](https://chaladev.site/)
 - **Contacto:** [info@chaladev.site](mailto:info@chaladev.site)
-- **Tiendas:** Microsoft Edge Add-ons *(en revisión)* · Mozilla Firefox Add-ons / AMO *(paquete `.firefox.zip` validado con 0 errores, listo para publicación)* · Chrome Web Store *(pendiente de cupo)*
+- **Tiendas:** Microsoft Edge Add-ons *(en revisión)* · Mozilla Firefox Add-ons / AMO (`chalacookiesedit`, *en revisión*) · Chrome Web Store *(pendiente de cupo)*
 
 ---
 
