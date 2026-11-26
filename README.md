@@ -1,10 +1,10 @@
 # ChalaCookiesEdit
 
-**ChalaCookiesEdit** es una extensión Manifest V3 (Chromium / Google Chrome / Microsoft Edge / Mozilla Firefox) perteneciente a la **Suite Chala** ([chaladev.site](https://chaladev.site/), junto a *Chalablock*, *ChalaVPN*, *ChalaTabs*, *ChalaDev*, *ChalaReader* y *ChalaScrape*). Permite editar, crear, duplicar, inspeccionar tokens JWT, gestionar cookies particionadas (CHIPS), bloquear en tiempo real, importar y exportar cookies de forma **100 % local**, sin dependencias externas en producción ni telemetría.
+**ChalaCookiesEdit** es una extensión Manifest V3 (Chromium / Google Chrome / Microsoft Edge / Opera / Mozilla Firefox) perteneciente a la **Suite Chala** ([chaladev.site](https://chaladev.site/), junto a *Chalablock*, *ChalaVPN*, *ChalaTabs*, *ChalaDev*, *ChalaReader*, *ChalaScrape* y *ChalaVoice*). Permite editar, crear, duplicar, inspeccionar tokens JWT, gestionar cookies particionadas (CHIPS), bloquear en tiempo real, importar y exportar cookies de forma **100 % local**, sin dependencias externas en producción ni telemetría.
 
 - **Sitio oficial:** [chaladev.site](https://chaladev.site/)
 - **Contacto:** [info@chaladev.site](mailto:info@chaladev.site)
-- **Tiendas:** Microsoft Edge Add-ons *(en revisión)* · Mozilla Firefox Add-ons / AMO (`chalacookiesedit`, *en revisión*) · Chrome Web Store *(pendiente de cupo)*
+- **Tiendas:** Microsoft Edge Add-ons *(en revisión)* · Mozilla Firefox Add-ons / AMO (`chalacookiesedit`, *en revisión*) · [Opera Add-ons](https://addons.opera.com/developer/) *(en preparación)* · Chrome Web Store *(pendiente de cupo)*
 
 ---
 
@@ -42,6 +42,7 @@
 | :--- | :--- | :--- |
 | **Google Chrome / Chromium** | `>= 109` (`minimum_chrome_version`) | Manifest V3 con Service Worker ES module (`"type": "module"`). |
 | **Microsoft Edge** | `>= 109` (basado en Chromium) | Compatible con carga descomprimida y paquete `.edge.zip`. |
+| **Opera (Opera Add-ons)** | `>= 95` (basado en Chromium `>= 109`) | Compatible con `ChalaCookiesEdit_1.0.0.chromium.zip` para [Complementos de Opera](https://addons.opera.com/developer/). |
 | **Mozilla Firefox (AMO)** | `>= 113.0` (`strict_min_version`) | Paquete `.firefox.zip` generado dinámicamente desde `src/` (`chalacookiesedit@chaladev.site`, `background.scripts` y `data_collection_permissions`). |
 | **Cookies Particionadas (CHIPS)** | Chromium `>= 119` (con fallback `< 119`) | Consulta `partitionKey: {}` y preserva `partitionKey` en edición/borrado. |
 | **Node.js (Build & Tests)** | `>= 22.0.0` | Cero `dependencies` y cero `devDependencies`; suite de 14 pruebas integrales. |
@@ -125,7 +126,8 @@ npm run clean
 - **[ChalaReader](https://github.com/joelchala/ChalaReader)** — Modo lectura limpio con Shadow DOM, temas visuales, Markdown, PDF y guardado offline
 - **[ChalaScrape](https://github.com/joelchala/ChalaScrape)** — Extractor visual de tablas, listas y tarjetas web a Excel (`.xlsx`) y CSV
 - **[ChalaTabs](https://github.com/joelchala/ChalaTabs)** — Gestor de pestañas en espacios de trabajo, ahorro de RAM y buscador instantáneo
-- **[ChalaVPN](https://github.com/joelchala/ChalaVPN)** — Proxy HTTPS/SOCKS5 con protección contra fugas de WebRTC
+- **[ChalaVoice](https://github.com/joelchala/ChalaVoice)** — Lector en voz alta 100% local con Popup, Mini Barra Flotante, Modo Inspector y lector de libros (`.epub`, `.md`, `.txt`)
+- **[ChalaVPN](https://github.com/joelchala/ChalaVPN)** — Proxy PAC seguro por país con rotación automática y protección WebRTC
 
 ---
 
